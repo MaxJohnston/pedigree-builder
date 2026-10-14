@@ -16,6 +16,7 @@ It runs entirely in the browser: there is nothing to install, no account, and no
 - [Using the chart](#using-the-chart)
 - [Editing people](#editing-people)
 - [Adding ancestors and linking people who appear twice](#adding-ancestors-and-linking-people-who-appear-twice)
+- [Example: pedigree collapse in a royal family](#example-pedigree-collapse-in-a-royal-family)
 - [Famous relatives](#famous-relatives)
 - [DNA tests, confirmations and haplogroups](#dna-tests-confirmations-and-haplogroups)
 - [Explore tools](#explore-tools)
@@ -38,12 +39,12 @@ It runs entirely in the browser: there is nothing to install, no account, and no
 
 There are two ways to use Pedigree Builder:
 
-1. **Online.** Open the project's [GitHub Pages site](https://maxjohnston.github.io/pedigree-builder/).
+1. **Online.** Open the project's GitHub Pages site (the link is in the repository's *About* panel, usually `https://<username>.github.io/<repository>/`).
 2. **On your own computer**, offline. Either:
    - **One file:** open the repository's **Releases** page (on the right of the main page), download `pedigree-builder.html` from the latest release, and double-click it. Everything is inside that one file.
    - **The whole project:** click the green **Code** button, then **Download ZIP**. Unzip it and double-click `index.html`. Keep the `css` and `js` folders next to it; the page needs them.
 
-Either way, the page opens with a **sample tree**: an invented family, the Whitakers, five generations deep. It is there so you can see what everything does. None of it is real.
+Either way, the page opens with a **sample tree**: an invented family, the Whitakers, five generations deep. It is there so you can see what everything does. None of it is real. A second, historical sample, the ancestry of King Edward VII, shows how ancestors who appear more than once are handled (see [the royal example](#example-pedigree-collapse-in-a-royal-family)).
 
 > **Important:** the online site and a downloaded copy keep separate trees, because browsers store data per website. Pick one way of using it and stick with it, and export a backup now and then (see [Backing up](#backing-up-importing-and-exporting)).
 
@@ -160,6 +161,51 @@ To undo a link later, open the child's form and tick **Unlink** under *Chart lay
 
 ---
 
+## Example: pedigree collapse in a royal family
+
+**Pedigree collapse** happens when the same person is your ancestor in more than one way, usually because two of your ancestors were related to each other. Everyone's tree collapses eventually (go back far enough and there are more places than people), but royal families show it within a few generations.
+
+Pedigree Builder includes a second sample tree to show how it handles this: the ancestry of **King Edward VII** (1841–1910), whose parents, **Queen Victoria and Prince Albert**, were first cousins. To load it, click **Edit → Backup & reset → Load the royal sample tree…** and confirm. (Your own tree is replaced, so export it first, or use Undo afterwards.) Dates and relationships come from Wikipedia, and most people link to their article.
+
+![Edward VII's pedigree, with Prince Albert's mother drawn above his father](docs/screenshot-royal.png)
+
+### Same couple, same generation: drawn once
+
+Queen Victoria's mother, **Victoria of Saxe-Coburg-Saalfeld**, was the sister of Prince Albert's father, **Ernest I**. Their parents, **Francis of Saxe-Coburg-Saalfeld** and **Augusta Reuss of Ebersdorf**, are therefore Edward VII's great-grandparents twice over.
+
+Because they fall in the same generation on both sides, they are drawn **once**, with lines to both of their children. Ernest I and his sister sit side by side, the way brothers and sisters always do on the chart. Open Francis's details and his **ancestor ratio** is 1/4, "reached by 2 routes", instead of the usual 1/8 for a great-grandparent.
+
+In your own tree you make this kind of link from a dashed **Add father** or **Add mother** card: type the person's name under **Already in the tree?** and choose them.
+
+### Same person, different generations: a repeat card
+
+**Frederick II of Saxe-Gotha-Altenburg** (1676–1732) and his wife **Magdalena Augusta** are ancestors on both sides, but at different depths:
+
+- through Queen Victoria: George III → his mother **Augusta of Saxe-Gotha** → her parents, Frederick II and Magdalena Augusta (generation 6);
+- through Prince Albert: Louise of Saxe-Gotha-Altenburg → Augustus → Ernest II → **Frederick III** → his parents, the same couple (generation 7).
+
+A person can only sit in one column, so they are drawn in full in the closer place, and the second place gets a **dashed repeat card**. Click a repeat card to jump to the full one. Their ancestors (Magdalena Augusta's parents, Karl of Anhalt-Zerbst and Sophia of Saxe-Weissenfels) are drawn only once, behind the full card. Frederick II's ancestor ratio is 3/64: 1/32 by one route plus 1/64 by the other.
+
+The **tree report** (Explore → Tree report) shows the effect on completeness: all 8 great-grandparent places are filled, but by only 6 different people.
+
+### Show mother above father
+
+Normally a person's father is drawn above their mother. When linked ancestors pull lines across the chart, swapping the order can untangle them.
+
+Here, Prince Albert's father, Ernest I, sits next to his sister, Queen Victoria's mother. With Albert's parents in the usual order, Ernest I and his sister are at the top of the chart, and the line from Queen Victoria down at the bottom has to cross all of Albert's branch to reach her mother.
+
+![The same chart with the usual order: Queen Victoria's line crosses Prince Albert's branch](docs/screenshot-royal-before.png)
+
+**Show mother above father** is ticked on Prince Albert's record (open his form and look under **Chart layout**). His mother is drawn on top, which moves Ernest I and his sister down next to Queen Victoria's side, and the line no longer crosses. Untick it and save to see the difference, then use Undo to put it back.
+
+### Try it yourself
+
+- **Explore → Relationship calculator:** Prince Albert and Queen Victoria are first cousins, and Edward VII is a 3rd great-grandson of Frederick III.
+- **Find a person:** type *Frederick II* and choose either card.
+- **★ Famous relatives:** Edward VII, Queen Victoria and George III are marked as notable.
+
+---
+
 ## Famous relatives
 
 Click **★ Famous relatives** in the toolbar to show the famous-relatives panel and badges. It lists:
@@ -270,6 +316,7 @@ Importing **replaces your current tree**. You are asked to confirm first, and yo
 
 - **Start a blank tree…** replaces everything with a single person.
 - **Load the sample tree…** brings back the Whitaker sample.
+- **Load the royal sample tree…** loads the ancestry of King Edward VII, which shows pedigree collapse and parent order (see [the royal example](#example-pedigree-collapse-in-a-royal-family)).
 
 Both can be undone.
 
@@ -449,7 +496,7 @@ Pedigree Builder is plain HTML, CSS and JavaScript, with no framework, no depend
 ```text
 index.html              The page: toolbar, chart area and panels
 css/styles.css          All styles, including light and dark themes
-js/sample-data.js       The invented sample family
+js/sample-data.js       The two sample trees: the invented Whitakers and Edward VII's ancestry
 js/core.js              Shared state (STATE) and helpers: rebuild(), names, dates, grandparent lines
 js/chart.js             Chart layout and drawing, zoom and pan, famous-relative lines, details panel, navigation
 js/editing.js           Edit mode: side sheet, person form, linking, deleting, famous-relative forms, backup screen

@@ -212,7 +212,8 @@ function buildLines(root){
     }
   });
   var counts={};
-  LINEINFO.forEach(function(e){e.s=surnameOf(P.get(e.n).name);var k=(e.s||'').toLowerCase();counts[k]=(counts[k]||0)+1});
+  /* the line is named after the grandparent's recorded last name ("of" dropped), or the last word of their name */
+  LINEINFO.forEach(function(e){var gp=P.get(e.n); e.s=gp.ln?String(gp.ln).replace(/^(of|von|de|van)\s+/i,'').trim()||null:surnameOf(gp.name);var k=(e.s||'').toLowerCase();counts[k]=(counts[k]||0)+1});
   LINEINFO.forEach(function(e){e.label=(e.s&&counts[e.s.toLowerCase()]===1)?e.s:P.get(e.n).name});
 }
 function lineLabel(slot){for(var i=0;i<LINEINFO.length;i++){if(LINEINFO[i].slot===slot) return LINEINFO[i].label} return ''}

@@ -651,7 +651,9 @@ function dataMgr(msg){
       '<div class="confirm" id="impc" hidden></div></section>'+
     '<section><h3 class="sh3">Start again</h3>'+
       '<div class="btnrow"><button class="btn danger" type="button" data-s="blank">Start a blank tree…</button>'+
-      '<button class="btn danger" type="button" data-s="reset">Load the sample tree…</button></div>'+
+      '<button class="btn danger" type="button" data-s="reset">Load the sample tree…</button>'+
+      '<button class="btn danger" type="button" data-s="royal">Load the royal sample tree…</button></div>'+
+      '<p class="note2">The royal sample is the ancestry of King Edward VII. It shows pedigree collapse (ancestors who appear more than once) and a person whose mother is drawn above their father.</p>'+
       '<div class="confirm" id="delc" hidden></div></section>'+
     '</div><footer class="sf"><button class="btn" type="button" data-s="cancel">Close</button></footer></div>';
   openSheet(h,null);
@@ -777,13 +779,15 @@ sheet.addEventListener('click',function(e){
   }
   else if(s==='blank') confirmBox('Replace the whole tree with a single person? You can undo this.','Start blank tree','blank-yes');
   else if(s==='reset') confirmBox('Replace the whole tree with the sample tree? You can undo this.','Load sample','reset-yes');
-  else if(s==='blank-yes'||s==='reset-yes'){
+  else if(s==='royal') confirmBox('Replace the whole tree with the royal sample tree (the ancestry of King Edward VII)? You can undo this.','Load royal sample','royal-yes');
+  else if(s==='blank-yes'||s==='reset-yes'||s==='royal-yes'){
     var kp=prefsNow();
-    STATE=s==='reset-yes'?clone(SAMPLE):{v:1,sample:false,people:[{n:1,name:'Your name',fn:'Your',ln:'name',l:1}],famous:[],haplo:[],dna:[],photos:{}};
+    STATE=s==='reset-yes'?clone(SAMPLE):s==='royal-yes'?clone(SAMPLE_ROYAL):{v:1,sample:false,people:[{n:1,name:'Your name',fn:'Your',ln:'name',l:1}],famous:[],haplo:[],dna:[],photos:{}};
     Object.assign(STATE,kp);
     view=1; czSel.clear();
     try{history.replaceState(null,'','#p1')}catch(_){}
-    commit(true, s==='reset-yes', s==='reset-yes'?'Loaded the sample tree':'Started a blank tree');
+    if(s==='royal-yes') depth=Math.max(depth,7);
+    commit(true, s!=='blank-yes', s==='reset-yes'?'Loaded the sample tree':s==='royal-yes'?'Loaded the royal sample tree':'Started a blank tree');
     closeSheet();
     if(s==='blank-yes'){ if(!editing) setEditing(true); curN=1; editPerson(1,false); }
   }

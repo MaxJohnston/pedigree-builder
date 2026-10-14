@@ -71,3 +71,48 @@ dna:[
   {id:'d5', type:'yt',    anchor:6,  src:'FamilyTreeDNA Y-37 (sample)'},
   {id:'d6', type:'mtt',   anchor:7,  src:'FamilyTreeDNA mtFull Sequence (sample)'}
 ]};
+
+/* A second sample: the ancestry of King Edward VII. His parents, Queen Victoria and Prince Albert, were first cousins,
+   so the tree shows pedigree collapse in two ways (a shared couple linked once, and an ancestor in two generations)
+   and "Show mother above father". Dates and relationships are from Wikipedia. */
+var SAMPLE_ROYAL={v:1, sample:true, people:[
+  {n:1, name:'Edward VII of the United Kingdom', fn:'Edward VII', ln:'of the United Kingdom', sex:'M', b:1841, bm:11, bdy:9, bp:'Buckingham Palace, London, England', d:1910, dm:5, ddy:6, dp:'Buckingham Palace, London, England', occ:'King of the United Kingdom as Edward VII, 1901–1910', star:'King Edward VII of the United Kingdom', wiki:'Edward_VII',
+    notes:'Royal sample tree. Edward VII’s parents were first cousins, so some of his ancestors appear more than once. Open Queen Victoria, Prince Albert, Francis of Saxe-Coburg-Saalfeld and Frederick II of Saxe-Gotha-Altenburg to see how each case is handled.'},
+  {n:2, name:'Albert of Saxe-Coburg and Gotha', fn:'Albert', ln:'of Saxe-Coburg and Gotha', b:1819, bm:8, bdy:26, bp:'Schloss Rosenau, Coburg, Germany', d:1861, dm:12, ddy:14, dp:'Windsor Castle, Berkshire, England', occ:'Prince Consort', wiki:'Albert,_Prince_Consort', mf:1,
+    notes:'“Show mother above father” is ticked on this record. His father, Ernest I, is the brother of Queen Victoria’s mother, and the two are drawn side by side. Putting Albert’s mother on top moves them down, next to Queen Victoria’s side of the chart, so the line from Victoria to her mother no longer crosses Albert’s branch. Untick it to compare.',
+    ev:[{id:'r-e1', t:'marr', date:'10 Feb 1840', y:1840, pl:'Chapel Royal, St James’s Palace, London', tx:'to his first cousin, Queen Victoria'}]},
+  {n:3, name:'Victoria of the United Kingdom', fn:'Victoria', ln:'of the United Kingdom', b:1819, bm:5, bdy:24, bp:'Kensington Palace, London, England', d:1901, dm:1, ddy:22, dp:'Osborne House, Isle of Wight, England', occ:'Queen of the United Kingdom, 1837–1901', star:'Queen Victoria of the United Kingdom', wiki:'Queen_Victoria',
+    ev:[{id:'r-e2', t:'marr', date:'10 Feb 1840', y:1840, pl:'Chapel Royal, St James’s Palace, London', tx:'to her first cousin, Prince Albert'}],
+    notes:'Her mother, Victoria of Saxe-Coburg-Saalfeld, was the sister of Prince Albert’s father, Ernest I, so Victoria and Albert were first cousins.'},
+  {n:4, name:'Ernest I of Saxe-Coburg and Gotha', fn:'Ernest I', ln:'of Saxe-Coburg and Gotha', b:1784, bm:1, bdy:2, bp:'Coburg, Germany', d:1844, dm:1, ddy:29, dp:'Gotha, Germany', occ:'Duke of Saxe-Coburg and Gotha', wiki:'Ernest_I,_Duke_of_Saxe-Coburg_and_Gotha'},
+  {n:5, name:'Louise of Saxe-Gotha-Altenburg', fn:'Louise', ln:'of Saxe-Gotha-Altenburg', b:1800, bm:12, bdy:21, bp:'Gotha, Germany', d:1831, dm:8, ddy:30, dp:'Paris, France', wiki:'Princess_Louise_of_Saxe-Gotha-Altenburg_(1800–1831)'},
+  {n:6, name:'Edward Augustus of Kent', fn:'Edward', mn:'Augustus', ln:'of Kent', b:1767, bm:11, bdy:2, bp:'Buckingham House, London, England', d:1820, dm:1, ddy:23, dp:'Sidmouth, Devon, England', occ:'Duke of Kent and Strathearn', wiki:'Prince_Edward,_Duke_of_Kent_and_Strathearn'},
+  {n:7, name:'Victoria of Saxe-Coburg-Saalfeld', fn:'Victoria', ln:'of Saxe-Coburg-Saalfeld', mln:'of Kent', b:1786, bm:8, bdy:17, bp:'Coburg, Germany', d:1861, dm:3, ddy:16, dp:'Frogmore House, Windsor, England', occ:'Duchess of Kent', wiki:'Princess_Victoria_of_Saxe-Coburg-Saalfeld', fa:8, mo:9,
+    notes:'Sister of Ernest I (Prince Albert’s father). Her parents are linked to the same cards as his, so Francis and Augusta are drawn once, with lines to both of their children.'},
+  {n:8, name:'Francis of Saxe-Coburg-Saalfeld', fn:'Francis', ln:'of Saxe-Coburg-Saalfeld', b:1750, bm:7, bdy:15, bp:'Coburg, Germany', d:1806, dm:12, ddy:9, dp:'Coburg, Germany', occ:'Duke of Saxe-Coburg-Saalfeld', wiki:'Francis,_Duke_of_Saxe-Coburg-Saalfeld',
+    notes:'Pedigree collapse in the same generation: great-grandfather of Edward VII through both of his parents. His ancestor ratio is 1/4 instead of the usual 1/8 for a great-grandparent.'},
+  {n:9, name:'Augusta Caroline Sophie Reuss of Ebersdorf', fn:'Augusta', mn:'Caroline Sophie', ln:'Reuss of Ebersdorf', b:1757, bm:1, bdy:19, bp:'Ebersdorf, Thuringia, Germany', d:1831, dm:11, ddy:16, dp:'Coburg, Germany', wiki:'Countess_Augusta_Reuss_of_Ebersdorf'},
+  {n:10, name:'Augustus of Saxe-Gotha-Altenburg', fn:'Augustus', ln:'of Saxe-Gotha-Altenburg', b:1772, bm:11, bdy:23, bp:'Gotha, Germany', d:1822, dm:5, ddy:17, dp:'Gotha, Germany', occ:'Duke of Saxe-Gotha-Altenburg', wiki:'Augustus,_Duke_of_Saxe-Gotha-Altenburg'},
+  {n:11, name:'Louise Charlotte of Mecklenburg-Schwerin', fn:'Louise', mn:'Charlotte', ln:'of Mecklenburg-Schwerin', b:1779, d:1801, dm:1, ddy:4},
+  {n:12, name:'George III of Great Britain', fn:'George III', ln:'of Great Britain', b:1738, bm:6, bdy:4, bp:'London, England', d:1820, dm:1, ddy:29, dp:'Windsor Castle, Berkshire, England', occ:'King of Great Britain and Ireland as George III, 1760–1820', star:'King George III', wiki:'George_III'},
+  {n:13, name:'Charlotte of Mecklenburg-Strelitz', fn:'Charlotte', ln:'of Mecklenburg-Strelitz', b:1744, bm:5, bdy:19, d:1818, dm:11, ddy:17, dp:'Kew Palace, Surrey, England', occ:'Queen consort', wiki:'Charlotte_of_Mecklenburg-Strelitz'},
+  {n:16, name:'Ernest Frederick of Saxe-Coburg-Saalfeld', fn:'Ernest', mn:'Frederick', ln:'of Saxe-Coburg-Saalfeld', occ:'Duke of Saxe-Coburg-Saalfeld'},
+  {n:17, name:'Sophie Antoinette of Brunswick-Wolfenbüttel', fn:'Sophie', mn:'Antoinette', ln:'of Brunswick-Wolfenbüttel'},
+  {n:18, name:'Heinrich XXIV Reuss of Ebersdorf', fn:'Heinrich XXIV', ln:'Reuss of Ebersdorf', occ:'Count Reuss of Ebersdorf'},
+  {n:19, name:'Karoline Ernestine of Erbach-Schönberg', fn:'Karoline', mn:'Ernestine', ln:'of Erbach-Schönberg'},
+  {n:20, name:'Ernest II of Saxe-Gotha-Altenburg', fn:'Ernest II', ln:'of Saxe-Gotha-Altenburg', b:1745, bm:1, bdy:30, bp:'Gotha, Germany', d:1804, dm:4, ddy:20, dp:'Gotha, Germany', occ:'Duke of Saxe-Gotha-Altenburg', wiki:'Ernest_II,_Duke_of_Saxe-Gotha-Altenburg'},
+  {n:21, name:'Charlotte of Saxe-Meiningen', fn:'Charlotte', ln:'of Saxe-Meiningen', b:1751, d:1827},
+  {n:24, name:'Frederick Louis of Great Britain', fn:'Frederick', mn:'Louis', ln:'of Great Britain', b:1707, bm:2, bdy:1, d:1751, dm:3, ddy:31, occ:'Prince of Wales', wiki:'Frederick,_Prince_of_Wales'},
+  {n:25, name:'Augusta of Saxe-Gotha', fn:'Augusta', ln:'of Saxe-Gotha', b:1719, bm:11, bdy:30, bp:'Gotha, Germany', d:1772, dm:2, ddy:8, dp:'Carlton House, London, England', occ:'Princess of Wales', wiki:'Augusta_of_Saxe-Gotha',
+    notes:'Sister of Frederick III of Saxe-Gotha-Altenburg, Prince Albert’s great-great-grandfather.'},
+  {n:40, name:'Frederick III of Saxe-Gotha-Altenburg', fn:'Frederick III', ln:'of Saxe-Gotha-Altenburg', b:1699, bm:4, bdy:14, bp:'Gotha, Germany', d:1772, dm:3, ddy:10, dp:'Gotha, Germany', occ:'Duke of Saxe-Gotha-Altenburg', wiki:'Frederick_III,_Duke_of_Saxe-Gotha-Altenburg',
+    notes:'Brother of Augusta, Princess of Wales. Their parents appear here as dashed repeat cards, because they are one generation closer on Queen Victoria’s side.'},
+  {n:41, name:'Luise Dorothea of Saxe-Meiningen', fn:'Luise', mn:'Dorothea', ln:'of Saxe-Meiningen', b:1710, d:1767},
+  {n:50, name:'Frederick II of Saxe-Gotha-Altenburg', fn:'Frederick II', ln:'of Saxe-Gotha-Altenburg', b:1676, bm:7, bdy:28, bp:'Gotha, Germany', d:1732, dm:3, ddy:23, dp:'Altenburg, Germany', occ:'Duke of Saxe-Gotha-Altenburg', wiki:'Frederick_II,_Duke_of_Saxe-Gotha-Altenburg',
+    notes:'Pedigree collapse across generations: a 4th great-grandfather of Edward VII through Queen Victoria and a 5th great-grandfather through Prince Albert. The second place is a dashed repeat card; click it to jump back here.'},
+  {n:51, name:'Magdalena Augusta of Anhalt-Zerbst', fn:'Magdalena', mn:'Augusta', ln:'of Anhalt-Zerbst', b:1679, bm:10, bdy:13, d:1740, dm:10, ddy:11, wiki:'Magdalena_Augusta_of_Anhalt-Zerbst'},
+  {n:80, name:'Frederick II of Saxe-Gotha-Altenburg', ref:50},
+  {n:81, name:'Magdalena Augusta of Anhalt-Zerbst', ref:51},
+  {n:102, name:'Karl of Anhalt-Zerbst', fn:'Karl', ln:'of Anhalt-Zerbst', occ:'Prince of Anhalt-Zerbst'},
+  {n:103, name:'Sophia of Saxe-Weissenfels', fn:'Sophia', ln:'of Saxe-Weissenfels'}
+], famous:[], haplo:[], dna:[]};
