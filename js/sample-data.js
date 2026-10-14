@@ -124,7 +124,7 @@ var SAMPLE_SNOW={v:1, sample:true, people:[
   {n:3, name:"Lyanna Stark", fn:"Lyanna", ln:"Stark", b:266, bq:"abt", d:283, dp:"Tower of Joy, Dorne", children:["Rhaenys Targaryen", "Aegon Targaryen"]},
   {n:4, name:"Aerys Targaryen II", fn:"Aerys", ln:"Targaryen", sx:"II", b:244, bp:"King's Landing, Westeros", d:283, dp:"Red Keep, King's Landing, Westeros", children:["Viserys Targaryen", "Daenerys Targaryen"]},
   {n:5, name:"Rhaella Targaryen", fn:"Rhaella", ln:"Targaryen", b:259, d:284, fa:8, mo:9, children:["Viserys Targaryen", "Daenerys Targaryen"]},
-  {n:6, name:"Rickard Stark", fn:"Rickard", ln:"Stark", b:230, bq:"aft", d:282, children:["Brandon Stark", "Eddard Stark", "Benjen Stark"]},
+  {n:6, name:"Rickard Stark", fn:"Rickard", ln:"Stark", mf:1, b:230, bq:"aft", d:282, children:["Brandon Stark", "Eddard Stark", "Benjen Stark"]},
   {n:7, name:"Lyarra Stark", fn:"Lyarra", ln:"Stark", b:215, bq:"aft", d:299, dq:"bef", children:["Brandon Stark", "Eddard Stark", "Benjen Stark"]},
   {n:8, name:"Jaehaerys Targaryen II", fn:"Jaehaerys", ln:"Targaryen", sx:"II", b:225, bp:"King's Landing, Westeros", d:262, dp:"King's Landing, Westeros"},
   {n:9, name:"Shaera Targaryen", fn:"Shaera", ln:"Targaryen", b:226, d:259, fa:16, mo:17},

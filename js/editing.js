@@ -6,6 +6,7 @@
 /* ---------- edit mode ---------- */
 var ICON_PEN='<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.8 2.4l2.8 2.8-8.2 8.2-3.5.7.7-3.5z"/><path d="M9.3 3.9l2.8 2.8"/></svg>';
 function setEditing(on){
+  if(on&&READONLY) on=false;
   editing=on;
   document.body.classList.toggle('editing',on);
   $('#edit').setAttribute('aria-pressed',on?'true':'false');
@@ -79,6 +80,7 @@ function dnaRow(g,n){
     '<button class="btn sq" type="button" data-s="rm-row" aria-label="Remove this DNA confirmation">&times;</button></div>';
 }
 function editPerson(n,isNew,child){
+  if(READONLY) return;
   if(!isNew&&!P.has(n)) return;
   if(isNew&&(P.has(n)||dep(n)>MAXDEPTH)) return;
   curN=n;

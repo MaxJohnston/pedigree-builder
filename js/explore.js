@@ -224,7 +224,7 @@ function reportSheet(){
       '<div class="tscroll"><table class="tbl"><thead><tr><th>Person</th><th>Relation</th><th>Missing</th><th class="num">Share</th><th></th></tr></thead><tbody>'+
       shown.map(function(w){ var p=P.get(w.n);
         var miss=w.mf&&w.mm?'Both parents':w.mf?'Father':'Mother';
-        var adds=(w.mf?'<button class="btn" type="button" data-s="wall-add" data-n="'+fa(w.n)+'" data-c="'+w.n+'">Add father</button> ':'')+(w.mm?'<button class="btn" type="button" data-s="wall-add" data-n="'+mo(w.n)+'" data-c="'+w.n+'">Add mother</button>':'');
+        var adds=READONLY?'':(w.mf?'<button class="btn" type="button" data-s="wall-add" data-n="'+fa(w.n)+'" data-c="'+w.n+'">Add father</button> ':'')+(w.mm?'<button class="btn" type="button" data-s="wall-add" data-n="'+mo(w.n)+'" data-c="'+w.n+'">Add mother</button>':'');
         return '<tr><td><button type="button" class="linkbtn" data-s="rel-find" data-n="'+w.n+'">'+esc(p.name)+'</button><br><span class="mute">'+esc(years(p))+'</span></td><td>'+esc(w.n===1?'Root':relTo(w.n))+'</td><td>'+miss+'</td><td class="num">'+(w.share>=0.01?w.share.toFixed(w.share>=1?1:2):w.share.toPrecision(2))+'%</td><td><div class="btnrow">'+adds+'</div></td></tr>';
       }).join('')+'</tbody></table></div>'+
       (wl.length>shown.length?'<button class="btn" type="button" data-s="walls-all">Show all '+wl.length+'</button>':'')+

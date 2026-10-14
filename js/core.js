@@ -3,6 +3,11 @@
    All files share one global scope and must load in the order listed in index.html. */
 'use strict';
 
+/* A read-only copy (saved with "Save as read-only web page") carries its tree in PB_EXPORT and cannot be edited.
+   PB_BODY keeps the page's untouched markup, so a read-only copy can be built from it later. */
+var READONLY=!!(window.PB_EXPORT&&window.PB_EXPORT.state);
+var PB_BODY=(function(){ var b=document.body.cloneNode(true); b.querySelectorAll('script').forEach(function(s){ s.remove() }); return b.innerHTML.trim() })();
+
 var MAXGEN=10, CW=256, CH=48, GAP=64, SLOT=58, MX=24, TOP=14, MAXDEPTH=44;
 var clone=function(o){return JSON.parse(JSON.stringify(o))};
 var STATE=clone(SAMPLE);
@@ -243,7 +248,7 @@ function renderLegend(){
   else h+=LINEINFO.map(function(e){
     return '<li><i class="dot" style="--lc:var(--l'+e.slot+')"></i><span title="'+esc(P.get(e.n).name)+'">'+esc(e.label)+'</span></li>';
   }).join('');
-  h+='<li><span class="cdna" aria-hidden="true">'+ICON_DNA+'</span><span>DNA confirmed</span></li>';
+  h+='<li id="lg-dna" hidden><span class="cdna" aria-hidden="true">'+ICON_DNA+'</span><span>DNA confirmed</span></li>';
   lg.innerHTML=h;
 }
 

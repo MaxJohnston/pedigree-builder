@@ -306,12 +306,14 @@ function render(keep){
       (isRep?'':'<button class="ico" type="button" data-act="details" aria-expanded="false" aria-label="Details for '+nm+'" title="Details">'+ICON_CHEV+'</button>')+
       (nd.more?'<a class="beyond" href="#p'+nd.n+'" data-act="tree" aria-label="Ancestors of '+nm+' continue further back. View their tree." title="More ancestors further back">&#8250;</a>':'')+
       (!gst&&!isRoot&&dnaOf(nd.n)?'<span class="cdna" title="'+esc(dnaTip(dnaOf(nd.n)))+'" aria-label="'+esc(dnaTip(dnaOf(nd.n)))+'" role="img">'+ICON_DNA+'</span>':'')+
-      (nd.famous?'<span class="cstar" title="Famous relative" aria-hidden="true">&#9733;</span>':(czOn&&p.star?'<span class="cstar" title="'+esc(p.star)+'" aria-label="'+esc(p.star)+'">&#9733;</span>':''))+
+      (nd.famous?'<span class="cstar" title="Famous relative" aria-hidden="true">&#9733;</span>':(p.star?'<span class="cstar" title="'+esc(p.star)+'" aria-label="'+esc(p.star)+'">&#9733;</span>':''))+
     '</div>';
   });
   if(!rn.kids.length) h+='<p class="note" style="left:'+(xOf(0)+CW+GAP)+'px;top:'+(topOf(rn)+14)+'px">Parents not recorded yet.</p>';
 
   world.innerHTML=h;
+  /* the DNA key is shown only when a card on the chart carries the DNA badge */
+  var lgd=document.getElementById('lg-dna'); if(lgd) lgd.hidden=!world.querySelector('.card .cdna');
   world.style.width=ww+'px'; world.style.height=wh+'px';
   rootCy=cy(rn);
   var realCols=new Set(nodes.filter(function(x){return !x.hap}).map(function(x){return x.d}));
@@ -321,7 +323,7 @@ function render(keep){
   $('#kicker').textContent=isHome?'Pedigree chart':'Pedigree from the perspective of';
   $('#title').textContent=rp.name;
   $('#sub').innerHTML=isHome
-    ? esc(years(rp))+(STATE.sample?' · <span class="samp">Sample tree</span> Press Edit to make it your own.':'')
+    ? esc(years(rp))+(STATE.sample?' · <span class="samp">Sample tree</span>'+(READONLY?'':' Press Edit to make it your own.'):'')
     : esc(relAll(view))+' of '+esc(first())+' · '+esc(years(rp))+' · <a href="#p1" data-act="tree">Back to '+esc(first())+'’s tree</a>';
   var real=nodes.filter(function(x){return !x.guest&&!x.hap&&!x.add&&!x.rep}), nReal=real.length;
   var filled=real.reduce(function(m,x){return Math.max(m,x.d+1)},1);
@@ -841,7 +843,7 @@ function popHTML(n){
   });
   var dn=n===view?null:dnaOf(n);
   if(dn) add('DNA confirmed',dn.map(function(g){return '<b>'+esc(g.title)+'</b> <span class="mute">'+esc(g.src)+'</span>'}).join('<br>'));
-  if(czOn&&p.star) add('Notable','★ '+esc(p.star));
+  if(p.star) add('Notable','★ '+esc(p.star));
   if(czOn){var fr=czRows(n); if(fr) add('Famous relatives',fr)}
   add('Ahnentafel no.','<span class="mono">'+n+'</span>');
   if(p.notes) add('Notes',esc(p.notes));
@@ -854,10 +856,10 @@ function popHTML(n){
   var ph=photoOf(n);
   return (ph?'<img class="pph" alt="Photo of '+esc(p.name)+'" src="'+esc(ph)+'">':'')+'<h2>'+esc(p.name)+cite('name')+'</h2><p class="life">'+esc(years(p))+'</p>'+
     '<dl>'+rows.join('')+'</dl>'+
-    (none?'<p class="hint">Birthplace, occupation, notes and sources are not recorded yet. Use Edit to add them.</p>':'')+
+    (none?'<p class="hint">Birthplace, occupation, notes and sources are not recorded yet.'+(READONLY?'':' Use Edit to add them.')+'</p>':'')+
     '<div class="actions">'+
       (n!==view?'<a class="btn primary" href="#p'+n+'" data-act="tree">View this person’s tree</a>':'')+
-      '<button class="btn" type="button" data-act="edit" data-n="'+n+'">Edit</button>'+
+      (READONLY?'':'<button class="btn" type="button" data-act="edit" data-n="'+n+'">Edit</button>')+
       '<button class="btn" type="button" data-act="close">Close</button>'+
     '</div>';
 }

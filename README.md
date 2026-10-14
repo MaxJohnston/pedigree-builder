@@ -103,11 +103,11 @@ Already have a tree in another program? Export it from there as a **GEDCOM (.ged
 **What the marks mean**
 
 - **Coloured dots and lines** show which of the four grandparents each ancestor descends from. The legend above the chart names the lines. The colours follow whoever is at the root of the current view.
-- **Teal DNA badge:** this person is confirmed by a DNA test or match. Hover over it to see how.
+- **Teal DNA badge:** this person is confirmed by a DNA test or match. Hover over it to see how. The *DNA confirmed* key in the legend appears only when a card on the chart has this badge.
 - **Rounded Y and mt nodes** after the last known person of a direct father line or mother line show that line's haplogroup. Click one to open its page on FamilyTreeDNA.
 - **A line that skips a column** leads to an ancestor who is drawn further back because they are also an ancestor by a longer route (see [pedigree collapse](#example-pedigree-collapse-in-a-royal-family)).
 - **Dashed card:** a *repeat* of someone drawn in full in a nearer generation, used only where a line would cross several others. Click it to go to the full card.
-- **★ badge** (when Famous relatives is on): a notable ancestor.
+- **★ badge:** a notable ancestor (someone whose *Notable for* field is filled in). It is always shown; the Famous relatives panel adds famous cousins and their lines.
 
 **Details panel.** Besides the person's facts, it shows their relationship to the root person, their **ancestor ratio** (the share of the root's ancestry that comes from them; for example 1/8 for a great-grandparent, more if they appear more than once), their grandparent line, haplogroups, DNA confirmations, sources and their number in the tree (see [Ahnentafel numbers](#ahnentafel-numbers)).
 
@@ -283,6 +283,7 @@ Open **View** in the toolbar:
 - **Show birth years of living people:** off by default, so living people show only *Living*. Turn it on to show their birth year.
 - **Show photos on cards.**
 - **Names on the chart:** birth names, or married names for anyone who has one.
+- **Save as read-only web page (HTML):** saves the whole app and your tree as one .html file, opening at the generations and person you are viewing. Anyone can open it in a browser, with no install, and look around (zoom, details, famous relatives, Explore), but there is no Edit button and nothing they do is saved. It does not touch the tree saved in their own browser. This works in the single-file version (`pedigree-builder.html` from Releases) and when the page is served from a web server such as GitHub Pages; the split-file version opened by double-clicking `index.html` cannot read its own files, so it explains this instead.
 - **Save chart as picture (PNG)** or **(SVG):** saves the chart as currently shown (generations, famous-relative lines and all) to your downloads. Very large charts are too big for PNG; use SVG or lower the generations.
 
 These settings are saved with your tree but are not part of the edit history, so Undo never changes them.
@@ -325,9 +326,9 @@ Importing **replaces your current tree**. You are asked to confirm first, and yo
 - **Start a blank tree…** replaces everything with a single person.
 - **Load the sample tree…** brings back the Whitaker sample.
 - **Load the royal sample tree…** loads the ancestry of King Edward VII, which shows pedigree collapse and parent order (see [the royal example](#example-pedigree-collapse-in-a-royal-family)).
-- **Load the Targaryen sample tree…** loads the fictional ancestry of Jon Snow from *A Song of Ice and Fire*, twenty generations deep. Generations of marriages between relatives (brother and sister, uncle and niece, cousins) make many ancestors appear more than once, so it is a good test of lines that skip columns.
+- **Load the Targaryen sample tree…** loads the fictional ancestry of Jon Snow from *A Song of Ice and Fire*, twenty generations deep. Generations of marriages between relatives (brother and sister, uncle and niece, cousins) make many ancestors appear more than once, so it is a good test of lines that skip columns. Rickard Stark is set to *Show mother above father*, which keeps the Stark lines from crossing.
 
-Both can be undone.
+All of these can be undone.
 
 ### GEDCOM
 

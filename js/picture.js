@@ -66,3 +66,35 @@ function savePicture(kind){
     .then(function(r){ toast(saveMsg(r,'picture')) },function(e){ toast(e&&e.message==='too-big'?'This chart is too large for a PNG. Save it as SVG instead, or lower Generations.':'The PNG could not be made in this browser. Try SVG instead.') });
 }
 document.querySelectorAll('[data-pic]').forEach(function(b){ b.addEventListener('click',function(){ savePicture(b.getAttribute('data-pic')) }) });
+
+/* Read-only copy: the whole app (styles, scripts and this tree) in one HTML file that opens in any browser, with
+   edit mode switched off. It is built from this page's own source, so it always matches this version. */
+function pageSources(){
+  var els=[].slice.call(document.querySelectorAll('style[data-pb],link[data-pb],script[data-pb]'));
+  return Promise.all(els.map(function(el){
+    var css=el.tagName!=='SCRIPT', src=el.getAttribute(el.tagName==='LINK'?'href':'src');
+    if(!src) return {css:css,text:el.textContent};
+    return fetch(src).then(function(r){ if(!r.ok) throw new Error('fetch'); return r.text() }).then(function(t){ return {css:css,text:t} });
+  }));
+}
+function saveReadOnly(){
+  closeMenus();
+  pageSources().then(function(parts){
+    var st=clone(STATE); delete st.handled; delete st.shareOn;
+    var data={state:st, depth:depth, view:view, made:new Date().toISOString().slice(0,10)};
+    var safe=function(s){ return s.replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029') };
+    var head=['<meta charset="utf-8">','<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">','<title>'+esc((P.get(1)||{}).name||'Family tree')+' · Family tree</title>'];
+    document.querySelectorAll('link[rel="icon"],link[rel="stylesheet"][href^="https://fonts."]').forEach(function(l){ head.push(l.outerHTML) });
+    var css='', js='';
+    parts.forEach(function(p){
+      if(p.css) css+='<style data-pb>\n'+p.text.replace(/<\/(style)/gi,'<\\/$1')+'\n</style>\n';
+      else js+='<script data-pb>\n'+p.text.replace(/<\/(script)/gi,'<\\/$1')+'\n<\/script>\n';
+    });
+    var html='<!doctype html>\n<html lang="en">\n<head>\n'+head.join('\n')+'\n'+css+'</head>\n<body>\n'+PB_BODY+'\n'+
+      '<script>var PB_EXPORT='+safe(JSON.stringify(data))+';<\/script>\n'+js+'</body>\n</html>\n';
+    return saveFile(fileStem()+'-read-only.html',new Blob([html],{type:'text/html'}),'text/html').then(function(r){ toast(saveMsg(r,'page')) });
+  },function(){
+    toast('This copy of Pedigree Builder cannot read its own files, so it cannot save a read-only page. Use the single-file version (pedigree-builder.html), or open the page from a web server.');
+  });
+}
+document.querySelectorAll('[data-ro]').forEach(function(b){ b.addEventListener('click',saveReadOnly) });

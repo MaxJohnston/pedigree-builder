@@ -28,16 +28,16 @@ def main():
     html = SRC.read_text(encoding="utf-8")
 
     def inline_css(m):
-        return "<style>\n" + read(m.group(1)).rstrip() + "\n</style>"
+        return "<style data-pb>\n" + read(m.group(1)).rstrip() + "\n</style>"
 
     def inline_js(m):
         code = read(m.group(1))
         # A literal "</script" inside the code would end the inline <script> early.
         code = re.sub(r"</(script)", r"<\\/\1", code, flags=re.I)
-        return "<script>\n" + code.rstrip() + "\n</script>"
+        return "<script data-pb>\n" + code.rstrip() + "\n</script>"
 
-    html, n_css = re.subn(r'<link rel="stylesheet" href="((?!https?:)[^"]+\.css)">', inline_css, html)
-    html, n_js = re.subn(r'<script src="((?!https?:)[^"]+\.js)"></script>', inline_js, html)
+    html, n_css = re.subn(r'<link rel="stylesheet" href="((?!https?:)[^"]+\.css)"(?: data-pb)?>', inline_css, html)
+    html, n_js = re.subn(r'<script src="((?!https?:)[^"]+\.js)"(?: data-pb)?></script>', inline_js, html)
 
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(html, encoding="utf-8")

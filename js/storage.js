@@ -100,6 +100,7 @@ function historySheet(){
 }
 /* The tree is saved in this browser's local storage after every change. */
 function queueSave(){
+  if(READONLY) return;
   try{ localStorage.setItem(LSKEY,JSON.stringify(STATE)); setSave('Saved in this browser') }
   catch(_){ setSave('Could not save: this browser’s storage is full or switched off. Export the tree to keep it.') }
 }
@@ -117,7 +118,7 @@ sel.addEventListener('change',function(){depthHeld=null;depth=+sel.value;render(
 var DKEY='pedigree-builder-generations', depthHeld=null;
 function savedDepth(){ try{ var v=parseInt(localStorage.getItem(DKEY),10); return v>0?v:0 }catch(_){ return 0 } }
 function fitDepth(want){ depth=Math.max(1,Math.min(want,MAXGEN)); depthHeld=want>MAXGEN?depth:null; sel.value=depth }
-function keepDepth(){ if(depth!==depthHeld){ try{ localStorage.setItem(DKEY,String(depth)) }catch(_){} } }
+function keepDepth(){ if(!READONLY&&depth!==depthHeld){ try{ localStorage.setItem(DKEY,String(depth)) }catch(_){} } }
 /* View settings: saved with the tree but not part of its edit history. */
 function setPref(k,v){ STATE[k]=v; rebuild(); render(true); queueSave() }
 function syncPrefs(){

@@ -369,3 +369,6 @@ select{padding:0 8px}
   .dnarow input{grid-column:1/-1;grid-row:2}
   .editbar .tip{display:none}
 }
+
+/* read-only copy: no edit mode */
+body.readonly #edit,body.readonly #editbar{display:none!important}
