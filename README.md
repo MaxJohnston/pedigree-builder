@@ -38,7 +38,7 @@ It runs entirely in the browser: there is nothing to install, no account, and no
 
 There are two ways to use Pedigree Builder:
 
-1. **Online.** Open the project's [GitHub Pages site](https://maxjohnston.github.io/pedigree-builder/).
+1. **Online.** Open the project's GitHub Pages site (the link is in the repository's *About* panel, usually `https://<username>.github.io/<repository>/`).
 2. **On your own computer**, offline. Either:
    - **One file:** open the repository's **Releases** page (on the right of the main page), download `pedigree-builder.html` from the latest release, and double-click it. Everything is inside that one file.
    - **The whole project:** click the green **Code** button, then **Download ZIP**. Unzip it and double-click `index.html`. Keep the `css` and `js` folders next to it; the page needs them.
@@ -201,6 +201,8 @@ The relationship (for example *2nd cousin, 3 times removed*) is worked out for y
 Confirmed people show a teal DNA badge; hover over it or open their details to see the evidence.
 
 **Haplogroups:** enter a Y-DNA haplogroup on a man, or an mtDNA haplogroup on anyone. It is then listed on everyone up that person's direct father line (Y-DNA) or mother line (mtDNA), and a haplogroup node is drawn after the last known person of that line. The node links to the haplogroup's page on FamilyTreeDNA unless you enter a different link.
+
+**Where the evidence stops:** under each haplogroup, **Evidence reaches up to** is optional. Leave it on *the whole line* and the haplogroup covers everyone up that father or mother line as far as it is recorded. If the DNA only proves the line up to a certain ancestor (for example, the common ancestor of the people who tested), choose that ancestor instead. The node is then drawn after them, people further back are not marked with the haplogroup, and the details panel says *evidence reaches up to …*. *Only this person* limits it to the person you entered it on.
 
 ---
 

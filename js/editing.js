@@ -158,9 +158,9 @@ function editPerson(n,isNew,child){
       f1('Wikipedia article','wiki',(p.wiki||'').replace(/_/g,' '),{ph:'Article title or link'})+
     '</fieldset>'+
     '<fieldset><legend>Haplogroups</legend>'+
-      '<p class="note2">A haplogroup entered here is shown on everyone up this person’s '+(male||isRoot?'father line (Y-DNA) and ':'')+'mother line (mtDNA), with a node at the end of the line.</p>'+
-      (male||isRoot?'<div class="row2">'+f1('Y-DNA','hy',hy.code||'',{ph:'e.g. R-M269'})+f1('Y-DNA link','hyu',hy.url||'',{ph:'Optional. FamilyTreeDNA by default'})+'</div>':'')+
-      '<div class="row2">'+f1('mtDNA','hm',hm.code||'',{ph:'e.g. H1'})+f1('mtDNA link','hmu',hm.url||'',{ph:'Optional. FamilyTreeDNA by default'})+'</div>'+
+      '<p class="note2">A haplogroup entered here is shown on everyone up this person’s '+(male||isRoot?'father line (Y-DNA) and ':'')+'mother line (mtDNA), with a node at the end of the line, or where the evidence stops if you choose a stopping point.</p>'+
+      (male||isRoot?'<div class="row2">'+f1('Y-DNA','hy',hy.code||'',{ph:'e.g. R-M269'})+f1('Y-DNA link','hyu',hy.url||'',{ph:'Optional. FamilyTreeDNA by default'})+'</div>'+stopRow('y','hyto',hy.to,n):'')+
+      '<div class="row2">'+f1('mtDNA','hm',hm.code||'',{ph:'e.g. H1'})+f1('mtDNA link','hmu',hm.url||'',{ph:'Optional. FamilyTreeDNA by default'})+'</div>'+stopRow('mt','hmto',hm.to,n)+
     '</fieldset>'+
     '<fieldset><legend>DNA confirmation</legend>'+
       '<p class="note2"><b>Self test</b>, '+(canY(n)?'<b>Y-DNA test</b> and ':'')+'<b>mtDNA test</b> record a test this person took, and confirm this person. <b>DNA match</b> confirms this person and the line down to the root.'+(onLine(n,fa)||onLine(n,mo)?' <b>'+(onLine(n,fa)?'Y-DNA line':'mtDNA line')+'</b> confirms the root’s direct '+(onLine(n,fa)?'father':'mother')+' line up to this person.':'')+(canY(n)?'':' Y-DNA tests are only for men.')+'</p>'+
@@ -216,6 +216,7 @@ function editPerson(n,isNew,child){
     if(dy.v&&!o.l&&dqa.q) o.dq=dqa.q; if(dy.v&&!o.l&&dqa.y2) o.d2=dqa.y2;
     if(!o.l&&ddt.m) o.dm=ddt.m;
     if(!o.l&&ddt.d) o.ddy=ddt.d;
+    if((form.elements.hyto&&fval(form,'hyto')&&!fval(form,'hy'))||(fval(form,'hmto')&&!fval(form,'hm'))){sheetErr('“Evidence reaches up to” needs a haplogroup to go with it. Enter the haplogroup, or set it back to the whole line.');return}
     var evs=readEvents(form); if(evs.err){sheetErr(evs.err);return} if(evs.list.length) o.ev=evs.list;
     var srl=readSources(form); if(srl.length) o.src=srl;
     ['bp','dp','occ','spouse','notes','star'].forEach(function(k){ var v=fval(form,k); if(v) o[k]=v });
@@ -229,13 +230,13 @@ function editPerson(n,isNew,child){
     if(phChanged){ var ph=Object.assign({},STATE.photos||{}); if(pendingPhoto) ph[n]=pendingPhoto; else delete ph[n]; STATE.photos=ph; }
     /* haplogroups from this person */
     var keepH=(STATE.haplo||[]).filter(function(x){return x.from!==n});
-    [['y','hy','hyu',hy],['mt','hm','hmu',hm]].forEach(function(t){
+    [['y','hy','hyu',hy,'hyto'],['mt','hm','hmu',hm,'hmto']].forEach(function(t){
       if(!form.elements[t[1]]) { if(t[3].code) keepH.push(t[3]); return }
       var code=fval(form,t[1]); if(!code) return;
       var e={id:t[3].id||uid('h'), type:t[0], from:n, code:code};
       var u=safeUrl(fval(form,t[2])); if(u) e.url=u;
       if(t[3].line&&t[3].code===code) e.line=t[3].line;
-      if(t[3].to!=null) e.to=t[3].to;
+      var tov=fval(form,t[4]); if(tov) e.to=+tov;
       keepH.push(e);
     });
     STATE.haplo=keepH;
@@ -252,6 +253,18 @@ function editPerson(n,isNew,child){
     if(isNew) flash(n);
   });
   syncLiving();
+}
+/* "Evidence reaches up to": optional stopping point for a haplogroup. The choices are this person and everyone above them
+   on the same father line (Y-DNA) or mother line (mtDNA); blank means the whole recorded line. */
+function stopRow(kind,key,cur,n){
+  var step=kind==='y'?fa:mo, up=[], x=step(n);
+  while(P.has(x)&&up.length<200){ up.push(x); x=step(x) }
+  var opt=function(v,label){ return '<option value="'+v+'"'+(cur!=null&&+cur===+v?' selected':'')+'>'+esc(label)+'</option>' };
+  var h='<option value="">The whole '+(kind==='y'?'father':'mother')+' line, as far as it is recorded</option>'+opt(n,'Only this person');
+  up.forEach(function(a){ var q=P.get(a); h+=opt(a,q.name+' · '+years(q)+' · '+relTo(a)) });
+  if(cur!=null&&+cur!==+n&&up.indexOf(+cur)<0&&P.has(+cur)) h+=opt(cur,P.get(+cur).name+' (no longer on this line)');
+  return '<label class="f" for="f-'+key+'"><span>'+(kind==='y'?'Y-DNA':'mtDNA')+' evidence reaches up to</span><select id="f-'+key+'" name="'+key+'">'+h+'</select>'+
+    '<small>Optional. Choose the earliest ancestor the DNA evidence actually reaches, for example the common ancestor of the tested people. The haplogroup node is drawn after them, and people further back are not marked with it.</small></label>';
 }
 /* Precision, day, month and year side by side, for birth (k="b") or death (k="d"). "Between" adds a second year. */
 function dateRow(lab,k,p){

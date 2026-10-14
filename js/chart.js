@@ -171,7 +171,7 @@ function render(keep){
 
   nodes.forEach(function(nd){
     if(nd.hap){
-      var hp=nd.hap, isY=hp.type==='y', tt=hp.title+' '+hp.code+' ('+hp.line+'). Opens FamilyTreeDNA in a new tab.';
+      var hp=nd.hap, isY=hp.type==='y', tt=hp.title+' '+hp.code+' ('+hp.line+')'+(hp.to!=null&&P.has(hp.end)?'. Evidence reaches up to '+P.get(hp.end).name:'')+'. Opens FamilyTreeDNA in a new tab.';
       h+='<a class="card hap '+(isY?'hy':'hm')+'" data-n="'+nd.n+'" href="'+esc(hp.url)+'" target="_blank" rel="noopener noreferrer" style="left:'+xOf(nd.d)+'px;top:'+topOf(nd)+'px" aria-label="'+esc(tt)+'" title="'+esc(tt)+'">'+
         '<span class="hglyph" aria-hidden="true">'+(isY?'Y':'mt')+'</span>'+
         '<span class="who"><span class="nm">'+esc(hp.code)+'</span><span class="yr">'+esc(hp.label)+'</span></span>'+
@@ -724,7 +724,7 @@ function popHTML(n){
   if(g) add('Line','<i class="dot" style="--lc:var(--l'+g+')"></i> '+esc(lineLabel(g))+' line');
   if(p.wiki) add('Wikipedia','<a href="https://en.wikipedia.org/wiki/'+encodeURI(p.wiki)+'" target="_blank" rel="noopener noreferrer">'+esc(p.wiki.replace(/_/g,' '))+' ↗</a>');
   HAPLO.forEach(function(h){
-    if(h.members.has(n)) add(h.title,'<a class="hg" href="'+esc(h.url)+'" target="_blank" rel="noopener noreferrer">'+esc(h.code)+' ↗</a> <span class="mute">('+h.line+')</span>');
+    if(h.members.has(n)) add(h.title,'<a class="hg" href="'+esc(h.url)+'" target="_blank" rel="noopener noreferrer">'+esc(h.code)+' ↗</a> <span class="mute">('+esc(h.line)+')'+(h.to!=null&&P.has(h.end)?' · evidence reaches up to '+esc(P.get(h.end).name):'')+'</span>');
   });
   var dn=n===view?null:dnaOf(n);
   if(dn) add('DNA confirmed',dn.map(function(g){return '<b>'+esc(g.title)+'</b> <span class="mute">'+esc(g.src)+'</span>'}).join('<br>'));
