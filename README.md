@@ -38,7 +38,7 @@ It runs entirely in the browser: there is nothing to install, no account, and no
 
 There are two ways to use Pedigree Builder:
 
-1. **Online.** Open the project's GitHub Pages site (the link is in the repository's *About* panel, usually `https://<username>.github.io/<repository>/`).
+1. **Online.** Open the project's [GitHub Pages site](https://maxjohnston.github.io/pedigree-builder/).
 2. **On your own computer**, offline. Either:
    - **One file:** open the repository's **Releases** page (on the right of the main page), download `pedigree-builder.html` from the latest release, and double-click it. Everything is inside that one file.
    - **The whole project:** click the green **Code** button, then **Download ZIP**. Unzip it and double-click `index.html`. Keep the `css` and `js` folders next to it; the page needs them.
