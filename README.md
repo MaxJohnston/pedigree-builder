@@ -44,7 +44,7 @@ There are two ways to use Pedigree Builder:
    - **One file:** open the repository's **Releases** page (on the right of the main page), download `pedigree-builder.html` from the latest release, and double-click it. Everything is inside that one file.
    - **The whole project:** click the green **Code** button, then **Download ZIP**. Unzip it and double-click `index.html`. Keep the `css` and `js` folders next to it; the page needs them.
 
-Either way, the page opens with a **sample tree**: an invented family, the Whitakers, five generations deep. It is there so you can see what everything does. None of it is real. A second, historical sample, the ancestry of King Edward VII, shows how ancestors who appear more than once are handled (see [the royal example](#example-pedigree-collapse-in-a-royal-family)).
+Either way, the page opens with a **sample tree**: an invented family, the Whitakers, five generations deep. It is there so you can see what everything does. None of it is real. A second, historical sample, the ancestry of King Edward VII, shows how ancestors who appear more than once are handled (see [the royal example](#example-pedigree-collapse-in-a-royal-family)). A third, fictional sample, the ancestry of Jon Snow from *A Song of Ice and Fire*, shows the same thing over twenty generations.
 
 > **Important:** the online site and a downloaded copy keep separate trees, because browsers store data per website. Pick one way of using it and stick with it, and export a backup now and then (see [Backing up](#backing-up-importing-and-exporting)).
 
@@ -94,7 +94,7 @@ Already have a tree in another program? Export it from there as a **GEDCOM (.ged
 | --- | --- |
 | See someone's details | Click **⌄** on their card. Click it again, or press Escape, to close. |
 | See the tree from someone else's point of view | Click the small tree icon on their card, or **View this person's tree** in their details. **Back to …'s tree** returns you to the start. |
-| Show more or fewer generations | Use the **Generations** menu. The page opens at 5. |
+| Show more or fewer generations | Use the **Generations** menu. The page opens at 5 the first time; after that, this browser remembers the number you last chose. If a tree has fewer generations than that, the chart shows them all and goes back to your number when you load a deeper tree. |
 | Zoom | Use **−** and **+**, or hold Ctrl (⌘ on a Mac) and scroll. Click the percentage to return to 100%. |
 | Fit the whole chart on screen | Click **Fit to screen**. |
 | Move around | Drag the chart with the mouse, or scroll. |
@@ -105,7 +105,8 @@ Already have a tree in another program? Export it from there as a **GEDCOM (.ged
 - **Coloured dots and lines** show which of the four grandparents each ancestor descends from. The legend above the chart names the lines. The colours follow whoever is at the root of the current view.
 - **Teal DNA badge:** this person is confirmed by a DNA test or match. Hover over it to see how.
 - **Rounded Y and mt nodes** after the last known person of a direct father line or mother line show that line's haplogroup. Click one to open its page on FamilyTreeDNA.
-- **Dashed card:** a *repeat* of someone who also appears elsewhere in the tree. Click it to highlight the original.
+- **A line that skips a column** leads to an ancestor who is drawn further back because they are also an ancestor by a longer route (see [pedigree collapse](#example-pedigree-collapse-in-a-royal-family)).
+- **Dashed card:** a *repeat* of someone drawn in full in a nearer generation, used only where a line would cross several others. Click it to go to the full card.
 - **★ badge** (when Famous relatives is on): a notable ancestor.
 
 **Details panel.** Besides the person's facts, it shows their relationship to the root person, their **ancestor ratio** (the share of the root's ancestry that comes from them; for example 1/8 for a great-grandparent, more if they appear more than once), their grandparent line, haplogroups, DNA confirmations, sources and their number in the tree (see [Ahnentafel numbers](#ahnentafel-numbers)).
@@ -154,8 +155,11 @@ In edit mode, a dashed **Add father** or **Add mother** card sits wherever a par
 
 Sometimes the person you want to add is **already in the tree**, for example when two of your ancestors were cousins and share grandparents. At the top of the Add form, under **Already in the tree?**, type part of their name, a place or a year, and choose them from the list. The button changes to **Link as father** (or mother).
 
-- If they are in the **same generation** in both places, they are drawn once, with lines to both children.
-- If they are in **different generations**, a dashed **repeat card** is drawn in the new place, pointing back to the full card. Its pencil lets you edit the original or remove the link.
+- They are **drawn once**, with a line to each child. If they belong in the same generation on both routes, the lines are ordinary ones.
+- If the routes have **different lengths**, the person is drawn in the **further generation**, and the line from the nearer child skips the columns in between, running through the gaps between cards. Each skipping line picks the gap where it crosses the fewest other lines, and lines to the same parents join where they can. Where there is room, the person (and everyone behind them) is moved toward the middle of all their children.
+- Only if that line would cross **3 or more other lines** does the chart draw the person in the nearer generation instead and put a dashed **repeat card** in each further place. Repeat cards are therefore always in the higher generation. Click one to go to the full card.
+
+The chart makes this choice by itself each time it is drawn, so there is nothing to set.
 
 To undo a link later, open the child's form and tick **Unlink** under *Chart layout*.
 
@@ -177,14 +181,16 @@ Because they fall in the same generation on both sides, they are drawn **once**,
 
 In your own tree you make this kind of link from a dashed **Add father** or **Add mother** card: type the person's name under **Already in the tree?** and choose them.
 
-### Same person, different generations: a repeat card
+### Same person, different generations: a line that skips a column
 
 **Frederick II of Saxe-Gotha-Altenburg** (1676–1732) and his wife **Magdalena Augusta** are ancestors on both sides, but at different depths:
 
 - through Queen Victoria: George III → his mother **Augusta of Saxe-Gotha** → her parents, Frederick II and Magdalena Augusta (generation 6);
 - through Prince Albert: Louise of Saxe-Gotha-Altenburg → Augustus → Ernest II → **Frederick III** → his parents, the same couple (generation 7).
 
-A person can only sit in one column, so they are drawn in full in the closer place, and the second place gets a **dashed repeat card**. Click a repeat card to jump to the full one. Their ancestors (Magdalena Augusta's parents, Karl of Anhalt-Zerbst and Sophia of Saxe-Weissenfels) are drawn only once, behind the full card. Frederick II's ancestor ratio is 3/64: 1/32 by one route plus 1/64 by the other.
+A person can only sit in one column, so the couple is drawn **once, in generation 7**, the further of the two places. Where there is room, parents reached by a line that skips generations are moved toward the middle of all their children, so Frederick II and Magdalena Augusta sit between Frederick III and Augusta of Saxe-Gotha. Augusta's line in generation 5 skips generation 6 and joins the line from Frederick III, so the two children share one route into generation 7. Their own ancestors (Magdalena Augusta's parents, Karl of Anhalt-Zerbst and Sophia of Saxe-Weissenfels) follow in generation 8. Open Frederick II's details: his relation reads *4th and 5th great-grandfather*, and his ancestor ratio is 3/64 (1/32 by one route plus 1/64 by the other).
+
+**When a repeat card is used instead.** If the skipping line would have to cross 3 or more other lines, as happens when the two routes are in distant parts of a large tree, the chart draws the person in the nearer generation and puts a dashed **repeat card** in the further place instead. Repeat cards always sit in the higher generation; click one to go to the full card. This sample does not need any.
 
 The **tree report** (Explore → Tree report) shows the effect on completeness: all 8 great-grandparent places are filled, but by only 6 different people.
 
@@ -198,10 +204,12 @@ Here, Prince Albert's father, Ernest I, sits next to his sister, Queen Victoria'
 
 **Show mother above father** is ticked on Prince Albert's record (open his form and look under **Chart layout**). His mother is drawn on top, which moves Ernest I and his sister down next to Queen Victoria's side, and the line no longer crosses. Untick it and save to see the difference, then use Undo to put it back.
 
+It is also ticked on **Ernest II of Saxe-Gotha-Altenburg**, further back. His son Frederick III is drawn below his mother, Luise Dorothea, which brings Frederick III closer to Augusta of Saxe-Gotha, the other child of the couple they share.
+
 ### Try it yourself
 
 - **Explore → Relationship calculator:** Prince Albert and Queen Victoria are first cousins, and Edward VII is a 3rd great-grandson of Frederick III.
-- **Find a person:** type *Frederick II* and choose either card.
+- **Find a person:** type *Frederick II* to jump to his card in generation 7.
 - **★ Famous relatives:** Edward VII, Queen Victoria and George III are marked as notable.
 
 ---
@@ -317,6 +325,7 @@ Importing **replaces your current tree**. You are asked to confirm first, and yo
 - **Start a blank tree…** replaces everything with a single person.
 - **Load the sample tree…** brings back the Whitaker sample.
 - **Load the royal sample tree…** loads the ancestry of King Edward VII, which shows pedigree collapse and parent order (see [the royal example](#example-pedigree-collapse-in-a-royal-family)).
+- **Load the Targaryen sample tree…** loads the fictional ancestry of Jon Snow from *A Song of Ice and Fire*, twenty generations deep. Generations of marriages between relatives (brother and sister, uncle and niece, cousins) make many ancestors appear more than once, so it is a good test of lines that skip columns.
 
 Both can be undone.
 
@@ -465,8 +474,8 @@ Person fields (only the ones that are filled in are written):
 | `children` | Names of children not in the tree. |
 | `ev` | Events: `t` (kind), `date` (as written), `y` (year), `pl` (place), `tx` (details). |
 | `src` | Sources: `f` (fact supported), `ti` (title), `url`. |
-| `fa`, `mo` | Links to a father or mother elsewhere in the same generation (pedigree collapse). |
-| `ref` | This card repeats person number `ref` from another generation. |
+| `fa`, `mo` | Links to a father or mother who is already elsewhere in the tree, in any generation (pedigree collapse). |
+| `ref` | Older files only: a stored repeat of person `ref`. It is turned into a link when the file is loaded, because the chart now draws repeat cards by itself. |
 | `mf` | `1` draws the mother above the father. |
 
 ### Ahnentafel numbers
@@ -496,7 +505,7 @@ Pedigree Builder is plain HTML, CSS and JavaScript, with no framework, no depend
 ```text
 index.html              The page: toolbar, chart area and panels
 css/styles.css          All styles, including light and dark themes
-js/sample-data.js       The two sample trees: the invented Whitakers and Edward VII's ancestry
+js/sample-data.js       The three sample trees: the invented Whitakers, Edward VII's ancestry and Jon Snow's fictional ancestry
 js/core.js              Shared state (STATE) and helpers: rebuild(), names, dates, grandparent lines
 js/chart.js             Chart layout and drawing, zoom and pan, famous-relative lines, details panel, navigation
 js/editing.js           Edit mode: side sheet, person form, linking, deleting, famous-relative forms, backup screen
@@ -514,7 +523,7 @@ The scripts are ordinary `<script>` files, not ES modules, so the page still ope
 
 ### How it works
 
-- **Data:** the tree lives in one object, `STATE`, saved to `localStorage` under the key `pedigree-builder-tree`. Every edit goes through `commit()`, which records an undo snapshot, rebuilds the lookup tables (`rebuild()`), redraws the chart (`render()`) and saves (`queueSave()`).
+- **Data:** the tree lives in one object, `STATE`, saved to `localStorage` under the key `pedigree-builder-tree`. The chosen number of generations is kept separately under `pedigree-builder-generations` (it is a view setting, not part of the tree). Every edit goes through `commit()`, which records an undo snapshot, rebuilds the lookup tables (`rebuild()`), redraws the chart (`render()`) and saves (`queueSave()`).
 - **Layout:** `render()` lays the pedigree out in generation columns, packs branches vertically, groups siblings who share parents, and assigns connector lanes to reduce crossings.
 - **People** are numbered by [Ahnentafel number](#ahnentafel-numbers); `fa(n)` and `mo(n)` give a person's father and mother, taking linked parents into account.
 

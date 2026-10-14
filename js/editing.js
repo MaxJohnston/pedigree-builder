@@ -114,7 +114,7 @@ function editPerson(n,isNew,child){
         '<ul class="combolist" id="f-linklist" role="listbox" aria-label="People already in the tree" hidden></ul>':'')+
         '<input type="hidden" name="link" id="f-link" value="">'+
         '<div class="picked" id="f-picked" hidden></div>'+
-        '<small>'+(links.length?'Leave this empty to add a new person. Use it when the same person is an ancestor more than once, for example when cousins married. They are drawn once, or as a dashed repeat card if they sit in a different generation.':'Nobody in the tree can be linked here yet.')+'</small></div>'+
+        '<small>'+(links.length?'Leave this empty to add a new person. Use it when the same person is an ancestor more than once, for example when cousins married. They are drawn once, with a line to each child; a dashed repeat card is used only when a line would cross several others.':'Nobody in the tree can be linked here yet.')+'</small></div>'+
     '</fieldset><div class="newfields">':'')+
     '<fieldset><legend>Name and dates</legend>'+
       (function(){ var np=nameParts(p);
@@ -491,18 +491,14 @@ function linkParent(child,role,target){
   var slot=role==='father'?2*child:2*child+1, key=role==='father'?'fa':'mo';
   var ci=STATE.people.indexOf(c);
   var nc=Object.assign({},c);
-  if(dep(target)===dep(slot)&&target!==slot){ nc[key]=target; }
-  else{
-    if(P.has(slot)) return;
-    delete nc[key];
-    STATE.people.push({n:slot, name:t.bname, ref:target});
-  }
+  if(P.has(slot)) return;
+  nc[key]=target;
   STATE.people[ci]=nc;
   closeSheet();
   if(dep(slot)+1>depth) depth=dep(slot)+1;
   commit(false,false,'Linked '+t.name+' as '+role+' of '+P.get(child).name);
   sel.value=depth;
-  flash(nc[key]!=null?target:slot);
+  flash(target);
 }
 function refSheet(n){
   var p=P.get(n), t=P.get(p.ref); curN=n;
@@ -652,8 +648,9 @@ function dataMgr(msg){
     '<section><h3 class="sh3">Start again</h3>'+
       '<div class="btnrow"><button class="btn danger" type="button" data-s="blank">Start a blank tree…</button>'+
       '<button class="btn danger" type="button" data-s="reset">Load the sample tree…</button>'+
-      '<button class="btn danger" type="button" data-s="royal">Load the royal sample tree…</button></div>'+
-      '<p class="note2">The royal sample is the ancestry of King Edward VII. It shows pedigree collapse (ancestors who appear more than once) and a person whose mother is drawn above their father.</p>'+
+      '<button class="btn danger" type="button" data-s="royal">Load the royal sample tree…</button>'+
+      '<button class="btn danger" type="button" data-s="snow">Load the Targaryen sample tree…</button></div>'+
+      '<p class="note2">The royal sample is the ancestry of King Edward VII. It shows pedigree collapse (ancestors who appear more than once) and a person whose mother is drawn above their father. The Targaryen sample is the fictional ancestry of Jon Snow from <i>A Song of Ice and Fire</i>: marriages between relatives make the same ancestors appear many times over twenty generations.</p>'+
       '<div class="confirm" id="delc" hidden></div></section>'+
     '</div><footer class="sf"><button class="btn" type="button" data-s="cancel">Close</button></footer></div>';
   openSheet(h,null);
@@ -780,16 +777,19 @@ sheet.addEventListener('click',function(e){
   else if(s==='blank') confirmBox('Replace the whole tree with a single person? You can undo this.','Start blank tree','blank-yes');
   else if(s==='reset') confirmBox('Replace the whole tree with the sample tree? You can undo this.','Load sample','reset-yes');
   else if(s==='royal') confirmBox('Replace the whole tree with the royal sample tree (the ancestry of King Edward VII)? You can undo this.','Load royal sample','royal-yes');
-  else if(s==='blank-yes'||s==='reset-yes'||s==='royal-yes'){
+  else if(s==='snow') confirmBox('Replace the whole tree with the Targaryen sample tree (the fictional ancestry of Jon Snow)? You can undo this.','Load Targaryen sample','snow-yes');
+  else if(s==='blank-yes'||s==='reset-yes'||s==='royal-yes'||s==='snow-yes'){
     var kp=prefsNow();
-    STATE=s==='reset-yes'?clone(SAMPLE):s==='royal-yes'?clone(SAMPLE_ROYAL):{v:1,sample:false,people:[{n:1,name:'Your name',fn:'Your',ln:'name',l:1}],famous:[],haplo:[],dna:[],photos:{}};
+    STATE=s==='reset-yes'?clone(SAMPLE):s==='royal-yes'?clone(SAMPLE_ROYAL):s==='snow-yes'?clone(SAMPLE_SNOW):{v:1,sample:false,people:[{n:1,name:'Your name',fn:'Your',ln:'name',l:1}],famous:[],haplo:[],dna:[],photos:{}};
     Object.assign(STATE,kp);
     view=1; czSel.clear();
     try{history.replaceState(null,'','#p1')}catch(_){}
-    if(s==='royal-yes') depth=Math.max(depth,7);
-    commit(true, s!=='blank-yes', s==='reset-yes'?'Loaded the sample tree':s==='royal-yes'?'Loaded the royal sample tree':'Started a blank tree');
+    if(s==='royal-yes') depth=Math.max(depth,8);
+    if(s==='snow-yes') depth=Math.max(depth,20);
+    commit(true, s!=='blank-yes', s==='reset-yes'?'Loaded the sample tree':s==='royal-yes'?'Loaded the royal sample tree':s==='snow-yes'?'Loaded the Targaryen sample tree':'Started a blank tree');
     closeSheet();
     if(s==='blank-yes'){ if(!editing) setEditing(true); curN=1; editPerson(1,false); }
+    else if(editing) setEditing(false);
   }
 });
 var curN=1;

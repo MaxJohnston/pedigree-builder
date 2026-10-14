@@ -9,7 +9,24 @@
 var LSKEY='pedigree-builder-tree';
 var store={touched:false};
 function valid(o){return !!(o&&Array.isArray(o.people)&&o.people.some(function(p){return p&&p.n===1&&p.name!=null}))}
+/* Older trees stored a repeat of an ancestor as its own entry ("ref"). The chart now draws repeats by itself, so each one
+   becomes a link from the child to the person it repeated, and anything that pointed at the repeat points at that person. */
+function unRef(o){
+  var people=o.people, by=new Map(), map=new Map();
+  people.forEach(function(p){ by.set(p.n,p) });
+  people.forEach(function(p){ if(p.ref!=null&&by.has(p.ref)&&by.get(p.ref).ref==null) map.set(p.n,p.ref) });
+  if(!map.size) return;
+  var to=function(n){ return map.has(n)?map.get(n):n };
+  map.forEach(function(t,r){ var c=by.get(Math.floor(r/2)); if(!c) return; if(r%2===0){ if(c.fa==null) c.fa=t } else { if(c.mo==null) c.mo=t } });
+  o.people=people.filter(function(p){ return !map.has(p.n) });
+  o.people.forEach(function(p){ if(p.fa!=null) p.fa=to(p.fa); if(p.mo!=null) p.mo=to(p.mo) });
+  (o.famous||[]).forEach(function(f){ (f.routes||[]).forEach(function(r){ r.anc=to(r.anc); if(r.sp!=null) r.sp=to(r.sp) }) });
+  (o.haplo||[]).forEach(function(h){ h.from=to(h.from); if(h.to!=null) h.to=to(h.to) });
+  (o.dna||[]).forEach(function(g){ g.anchor=to(g.anchor) });
+  if(o.photos) map.forEach(function(t,r){ if(o.photos[r]&&!o.photos[t]) o.photos[t]=o.photos[r]; delete o.photos[r] });
+}
 function normalize(o){
+  if(o&&Array.isArray(o.people)) unRef(o);
   var ph={}; if(o.photos&&typeof o.photos==='object') Object.keys(o.photos).forEach(function(k){ if(typeof o.photos[k]==='string'&&PHOTO_OK.test(o.photos[k])) ph[k]=o.photos[k] });
   return {v:1, sample:!!o.sample, showLiving:!!o.showLiving, nameView:o.nameView==='married'?'married':'birth', hidePhotos:!!o.hidePhotos,
     photos:ph,
@@ -92,9 +109,15 @@ var sel=$('#depth');
 function fillDepth(){
   sel.innerHTML='';
   for(var g=1;g<=MAXGEN;g++){var o=document.createElement('option');o.value=g;o.textContent=g;sel.appendChild(o)}
-  depth=Math.min(depth,MAXGEN); sel.value=depth;
+  fitDepth(depthHeld!=null?(savedDepth()||depth):depth);
 }
-sel.addEventListener('change',function(){depth=+sel.value;render()});
+sel.addEventListener('change',function(){depthHeld=null;depth=+sel.value;render()});
+/* The number of generations shown is remembered in this browser. When a tree is too short for the remembered number,
+   the chart shows what it has and keeps the remembered number for the next, deeper tree. */
+var DKEY='pedigree-builder-generations', depthHeld=null;
+function savedDepth(){ try{ var v=parseInt(localStorage.getItem(DKEY),10); return v>0?v:0 }catch(_){ return 0 } }
+function fitDepth(want){ depth=Math.max(1,Math.min(want,MAXGEN)); depthHeld=want>MAXGEN?depth:null; sel.value=depth }
+function keepDepth(){ if(depth!==depthHeld){ try{ localStorage.setItem(DKEY,String(depth)) }catch(_){} } }
 /* View settings: saved with the tree but not part of its edit history. */
 function setPref(k,v){ STATE[k]=v; rebuild(); render(true); queueSave() }
 function syncPrefs(){

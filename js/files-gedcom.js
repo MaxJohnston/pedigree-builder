@@ -300,8 +300,7 @@ function gedBuild(G,rootId){
       var pid=x[0], sn=x[1]; if(!pid||!G.recs[pid]||dep(sn)>MAXDEPTH) return;
       if(slot.has(pid)){
         var ex=slot.get(pid);
-        if(dep(ex)===dep(sn)) byN.get(n)[x[2]]=ex;
-        else { var rp={n:sn,name:byN.get(ex).name,ref:ex}; people.push(rp); byN.set(sn,rp) }
+        byN.get(n)[x[2]]=ex;
         return;
       }
       slot.set(pid,sn); var o=person(pid,sn); people.push(o); byN.set(sn,o); q.push([pid,sn]); gens=Math.max(gens,dep(sn)+1);

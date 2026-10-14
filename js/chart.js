@@ -5,38 +5,64 @@
 
 /* ---------- render ---------- */
 function render(keep){
+  keepDepth();
   closeDetails(true);
   buildLines(view); renderLegend();
-  var D=depth, nodes=[], seen=new Map();
-  /* Each person is drawn once. A person reached by two routes (pedigree collapse) is reused. */
-  function walk(n,d,par){
-    var node=seen.get(n); if(node) return node;
-    node={n:n,d:d,p:P.get(n),kids:[],owner:par}; seen.set(n,node);
-    if(!node.p.ref&&(d<D-1||(editing&&d===D-1))){ (node.p.mf?[mo(n),fa(n)]:[fa(n),mo(n)]).forEach(function(m){
-      if(P.has(m)){ if(d<D-1) node.kids.push(walk(m,d+1,node)); }
-      else if(editing&&dep(m)<=MAXDEPTH){
-        /* edit mode: a dashed card for each missing parent */
-        var a={n:m,d:d+1,p:{name:''},kids:[],owner:node,add:true,child:n,role:m===fa(n)?'father':'mother',cls:'add',color:'var(--edit)'};
-        node.kids.push(a); nodes.push(a);
-      }
-    }); }
-    node.more=(d===D-1)&&(P.has(fa(n))||P.has(mo(n)));
-    nodes.push(node); return node;
+  var D=depth, nodes, seen, rn, split=new Set();
+  /* One column per generation. Someone reached by routes of different lengths (pedigree collapse) is drawn once, in the
+     furthest column they reach, and the nearer child gets a longer line that skips the columns in between. If that line
+     would cross several others, the person is drawn in the nearest column instead, and each further place gets a dashed
+     repeat card, so repeat cards are always in the higher generation. */
+  function build(withAdd){
+    nodes=[]; seen=new Map();
+    var anc=new Set([view]), q=[view], nkid=new Map();
+    for(var i=0;i<q.length;i++){ var x=q[i]; if(P.get(x).ref!=null) continue;
+      [fa(x),mo(x)].forEach(function(m){ if(!P.has(m)) return; nkid.set(m,(nkid.get(m)||0)+1); if(!anc.has(m)){ anc.add(m); q.push(m) } }); }
+    /* children before parents, so each ancestor's column is settled from all of its children */
+    var dOf=new Map([[view,0]]), ready=[view];
+    while(ready.length){
+      var y=ready.shift(), dy=dOf.get(y); if(P.get(y).ref!=null) continue;
+      [fa(y),mo(y)].forEach(function(m){ if(!P.has(m)) return;
+        if(dy!=null&&dy+1<=D-1){ var c=dOf.get(m); dOf.set(m,c==null?dy+1:split.has(m)?Math.min(c,dy+1):Math.max(c,dy+1)) }
+        nkid.set(m,nkid.get(m)-1); if(nkid.get(m)===0) ready.push(m);
+      });
+    }
+    dOf.forEach(function(d,n){ var nd={n:n,d:d,p:P.get(n),kids:[],owner:null}; seen.set(n,nd); nodes.push(nd) });
+    var vis=new Set();
+    (function visit(n){
+      if(vis.has(n)) return; vis.add(n);
+      var nd=seen.get(n), p=nd.p;
+      if(!p.ref) (p.mf?[mo(n),fa(n)]:[fa(n),mo(n)]).forEach(function(m){
+        if(P.has(m)&&seen.has(m)&&nd.d<D-1){
+          var pn=seen.get(m);
+          if(pn.d===nd.d+1){ nd.kids.push(pn); if(!pn.owner){ pn.owner=nd; visit(m) } }
+          else if(pn.d>nd.d+1) nd.kids.push(pn);
+          else { var r={n:m,d:nd.d+1,p:pn.p,kids:[],owner:nd,rep:true}; nd.kids.push(r); nodes.push(r) }
+        }else if(!P.has(m)&&withAdd&&dep(m)<=MAXDEPTH){
+          /* edit mode: a dashed card for each missing parent */
+          var a={n:m,d:nd.d+1,p:{name:''},kids:[],owner:nd,add:true,child:n,role:m===fa(n)?'father':'mother',cls:'add',color:'var(--edit)'};
+          nd.kids.push(a); nodes.push(a);
+        }
+      });
+      nd.more=(nd.d===D-1)&&(P.has(fa(n))||P.has(mo(n)));
+    })(view);
+    rn=seen.get(view);
   }
-  var rn=walk(view,0,null);
   /* Full siblings share the same parent nodes: they sit together, centred on those parents. */
-  var groups={};
-  nodes.forEach(function(nd){
-    if(!nd.kids.length||nd.p.solo) return;
-    nd.gkey=nd.d+':'+nd.kids.map(function(k){return k.n}).sort(function(a,b){return a-b}).join(',');
-    (groups[nd.gkey]=groups[nd.gkey]||[]).push(nd);
-  });
-  Object.keys(groups).forEach(function(key){
-    var g=groups[key]; var ok=function(x){return x.p.so!=null?x.p.so:x.n}; g.sort(function(a,b){return ok(a)-ok(b)});
-    if(g.length<2) return;
-    var own=g.filter(function(m){return m.kids[0].owner===m})[0]||g[0];
-    own.grp=g; g.forEach(function(m){ if(m!==own) m.ghost=true });
-  });
+  function group(){
+    var groups={};
+    nodes.forEach(function(nd){
+      if(!nd.kids.length||nd.p.solo||nd.rep) return;
+      nd.gkey=nd.d+':'+nd.kids.map(function(k){return k.n}).sort(function(a,b){return a-b}).join(',');
+      (groups[nd.gkey]=groups[nd.gkey]||[]).push(nd);
+    });
+    Object.keys(groups).forEach(function(key){
+      var g=groups[key]; var ok=function(x){return x.p.so!=null?x.p.so:x.n}; g.sort(function(a,b){return ok(a)-ok(b)});
+      if(g.length<2) return;
+      var own=g.filter(function(m){return m.kids.some(function(k){return k.owner===m})})[0]||g[0];
+      own.grp=g; g.forEach(function(m){ if(m!==own) m.ghost=true });
+    });
+  }
   /* Pack the tree: each branch is laid out on its own, then the next branch is slid up as far as it can go
      without touching the previous one in any generation column. Parents stay centred on their own parents. */
   function lay(n){
@@ -71,9 +97,77 @@ function render(keep){
     if(n.grp){ var h2=(n.grp.length-1)/2; n.grp.forEach(function(m,i){ m.y=y0+i-h2 }); }
     n.kids.forEach(function(k){ if(k.owner===n&&!k.ghost) settle(k,base+k.off) });
   }
-  lay(rn); settle(rn,0);
-  var top=Infinity; nodes.forEach(function(x){ if(x.y<top) top=x.y });
-  nodes.forEach(function(x){ x.y-=top });
+  /* A line that skips generations runs between the cards of the columns it passes: the free row nearest the parent. */
+  /* Lines from one child to a couple further back travel together, aimed at the middle of the couple. */
+  function longTarget(u,v){
+    var grp=u.kids.filter(function(k){return k.d===v.d&&k.owner===v.owner});
+    return grp.length?grp.reduce(function(s,k){return s+k.y},0)/grp.length:v.y;
+  }
+  /* Connectors a generation-skipping line from u to v would cross if it ran across the columns in between at row yc
+     and then joined the fork of v's nearer child (its owner) next to v. */
+  function crossAt(u,v,yc,ty){
+    var c=0, o=v.owner, inn=function(t,a,b){ return t>Math.min(a,b)+0.01&&t<Math.max(a,b)-0.01 };
+    var lo=o?Math.min(o.y,ty-0.5):ty, hi=o?Math.max(o.y,ty+0.5):ty, tp=yc<lo?lo:yc>hi?hi:yc;
+    nodes.forEach(function(a){ a.kids.forEach(function(b){
+      if(b.d!==a.d+1||a===u||b.add) return;
+      var g=a.d;
+      if(g===u.d){ if(inn(b.y,u.y,yc)) c++; if(inn(u.y,a.y,b.y)) c++; }
+      else if(g>u.d&&g<v.d-1){ if(inn(yc,a.y,b.y)) c++; }
+      else if(g===v.d-1&&a!==o){ if(inn(yc,a.y,b.y)) c++; if(inn(a.y,yc,tp)) c++; }
+    }) });
+    return c;
+  }
+  /* The row a generation-skipping line runs along between the cards of the columns it passes: of the free rows,
+     the one where it crosses the fewest other lines, then the nearest to the parents. */
+  function routeOf(u,v){
+    var ty=longTarget(u,v), mids=nodes.filter(function(x){return x.d>u.d&&x.d<v.d});
+    var free=function(y){ return mids.every(function(x){return Math.abs(x.y-y)>=0.5-1e-9}) };
+    var cands=[ty,u.y]; mids.forEach(function(x){ cands.push(x.y-0.5,x.y+0.5) });
+    var best=null;
+    cands.forEach(function(y){ if(!free(y)) return; var c=crossAt(u,v,y,ty), sc=c*1000+Math.abs(y-ty)+0.3*Math.abs(y-u.y); if(!best||sc<best.s) best={y:y,s:sc,c:c} });
+    return best||{y:ty,c:crossAt(u,v,ty,ty)};
+  }
+  function corridor(u,v){ return routeOf(u,v).y }
+  /* 3 or more crossings counts as several. */
+  function longCrossings(u,v){ return routeOf(u,v).c }
+  /* Parents reached by a line that skips generations start out centred on their nearest child. Slide them, with everyone
+     behind them, toward the middle of all their children, as far as there is room in every column they occupy. */
+  function centerCross(){
+    var inc=new Map();
+    nodes.forEach(function(u){ u.kids.forEach(function(k){ if(k.add||k.rep) return; var a=inc.get(k)||[]; if(a.indexOf(u)<0) a.push(u); inc.set(k,a) }) });
+    var blocks=new Map();
+    inc.forEach(function(ch,k){
+      if(!k.owner||ch.length<2||!ch.some(function(c){return k.d>c.d+1})) return;
+      var key=k.owner.n+'|'+ch.map(function(c){return c.n}).sort(function(a,b){return a-b}).join(',');
+      var b=blocks.get(key);
+      if(!b){ b={d:k.d,want:ch.reduce(function(s,c){return s+c.y},0)/ch.length-k.owner.y,members:[]}; blocks.set(key,b) }
+      b.members.push(k);
+    });
+    Array.from(blocks.values()).sort(function(a,b){return a.d-b.d}).forEach(function(b){
+      var S=new Set();
+      (function collect(xs){ xs.forEach(function(x){ if(S.has(x)) return; S.add(x); if(x.grp) collect(x.grp); collect(x.kids.filter(function(k){return k.owner===x})) }) })(b.members);
+      var others=nodes.filter(function(z){return !S.has(z)});
+      var fits=function(dl){ var ok=true; S.forEach(function(x){ if(ok) others.forEach(function(z){ if(z.d===x.d&&Math.abs(z.y-(x.y+dl))<1-1e-6) ok=false }) }); return ok };
+      var dl=b.want, sg=dl<0?-1:1;
+      while(Math.abs(dl)>1e-6&&!fits(dl)) dl=Math.abs(dl)<=0.5?0:dl-sg*0.5;
+      if(dl) S.forEach(function(x){ x.y+=dl });
+    });
+  }
+  /* Repeat cards are decided without edit mode's "Add father/mother" cards, so entering edit mode never changes them. */
+  for(var pass=0;pass<8;pass++){
+    build(false); group(); lay(rn); settle(rn,0); centerCross();
+    var top=Infinity; nodes.forEach(function(x){ if(x.y<top) top=x.y });
+    nodes.forEach(function(x){ x.y-=top });
+    var bad=[];
+    nodes.forEach(function(u){ u.kids.forEach(function(v){ if(v.d>u.d+1&&!split.has(v.n)&&bad.indexOf(v.n)<0&&longCrossings(u,v)>=3) bad.push(v.n) }) });
+    if(!bad.length) break;
+    bad.forEach(function(m){ split.add(m) });
+  }
+  if(editing){
+    build(true); group(); lay(rn); settle(rn,0); centerCross();
+    var top2=Infinity; nodes.forEach(function(x){ if(x.y<top2) top2=x.y });
+    nodes.forEach(function(x){ x.y-=top2 });
+  }
   var czEdges=new Set();
   ANC=ancSteps(view);
   var cz=addGuests(nodes,seen,view,function(k){czEdges.add(k)});
@@ -108,12 +202,21 @@ function render(keep){
     a=a.slice().sort(function(u,v){return u.y-v.y});
     return (a.indexOf(nd)-(a.length-1)/2)*6;
   };
+  var rowY=function(y){return TOP+y*SLOT+SLOT/2};
+  /* where a connector leaves the gap next to the child: the parent's row, or for a line that skips generations, its corridor */
+  var kidY=function(nd,k){ return k.d>nd.d+1?rowY(corridor(nd,k)):cy(k)+entry(nd,k) };
   var byDepth={};
+  /* A line that skips generations joins the fork of the parent's nearer child for its last stretch, coming in from the
+     left at its corridor row. Count that row as part of that fork, so neighbouring forks get their own lanes beside it. */
+  nodes.forEach(function(nd){ nd.extra=[] });
+  nodes.forEach(function(nd){ nd.kids.forEach(function(k){
+    if(k.d>nd.d+1&&k.owner&&k.owner.d===k.d-1&&k.owner.kids.indexOf(k)>=0) k.owner.extra.push(rowY(corridor(nd,k)));
+  }) });
   nodes.forEach(function(nd){ if(nd.kids.length) (byDepth[nd.d]=byDepth[nd.d]||[]).push(nd); });
   Object.keys(byDepth).forEach(function(dk){
     var list=byDepth[dk];
     list.forEach(function(nd){
-      var ys=[cy(nd)]; nd.kids.forEach(function(k){ys.push(cy(k)+entry(nd,k))});
+      var ys=[cy(nd)].concat(nd.extra); nd.kids.forEach(function(k){ys.push(kidY(nd,k))});
       nd.lo=Math.min.apply(null,ys); nd.hi=Math.max.apply(null,ys);
     });
     list.sort(function(a,b){return a.lo-b.lo||a.hi-b.hi});
@@ -122,7 +225,7 @@ function render(keep){
        another crosses it once for every of its child entries that falls inside the other's span, and once more if the
        other's own row falls inside its span. */
     var lanes=[];
-    list.forEach(function(nd){ nd.ky=nd.kids.map(function(k){return cy(k)+entry(nd,k)}); });
+    list.forEach(function(nd){ nd.ky=nd.kids.map(function(k){return kidY(nd,k)}); });
     /* Cards that share the same parents (brothers and sisters) share one lane, so their connectors join into a single fork
        instead of crossing each other. */
     var fam=new Map(), items=[];
@@ -131,7 +234,7 @@ function render(keep){
       var it=key&&fam.get(key);
       if(!it){ it={members:[],lo:Infinity,hi:-Infinity,ky:[],cys:[]}; items.push(it); if(key) fam.set(key,it) }
       it.members.push(nd); it.lo=Math.min(it.lo,nd.lo); it.hi=Math.max(it.hi,nd.hi);
-      it.ky=it.ky.concat(nd.ky); it.cys.push(cy(nd));
+      it.ky=it.ky.concat(nd.ky); it.cys.push(cy(nd)); it.cys=it.cys.concat(nd.extra);
     });
     items.sort(function(a,b){return a.lo-b.lo||a.hi-b.hi});
     var near=function(a,b){return a.lo<b.hi+3&&b.lo<a.hi+3};
@@ -162,7 +265,14 @@ function render(keep){
     nd.kids.forEach(function(k){
       var x1=xOf(nd.d)+CW, y1=cy(nd), x2=xOf(k.d), y2=cy(k)+entry(nd,k), xm=x1+nd.trunk;
       var on=czEdges.has(nd.n+'>'+k.n);
-      var seg='<path'+(on?' class="cz"':(k.cls?' class="'+k.cls+'"':''))+' style="--lc:'+(k.color||lc(k.n))+'" d="M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+x2+'"/>';
+      var dd='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+x2;
+      if(k.d>nd.d+1){
+        /* across the columns in between, then into the fork of the parent's nearer child, sharing its last stretch */
+        var o=k.owner&&k.owner.trunk!=null&&k.owner.d===k.d-1?k.owner:null;
+        var xb=o?xOf(o.d)+CW+o.trunk:x2-GAP+5, yb=o?cy(k)+entry(o,k):y2;
+        dd='M'+x1+' '+y1+'H'+xm+'V'+rowY(corridor(nd,k))+'H'+xb+'V'+yb+'H'+x2;
+      }
+      var seg='<path'+(on?' class="cz"':(k.cls?' class="'+k.cls+'"':''))+' style="--lc:'+(k.color||lc(k.n))+'" d="'+dd+'"/>';
       if(on) hot+=seg; else paths+=seg;
     });
   });
@@ -184,16 +294,16 @@ function render(keep){
         '<span class="plus" aria-hidden="true">+</span><span class="who"><span class="nm">Add '+nd.role+'</span><span class="yr">of '+cn+'</span></span></button>';
       return;
     }
-    var p=nd.p, isRoot=nd.n===view, nm=esc(p.name), gst=nd.guest;
-    var cls='card'+(isRoot?' root':'')+(p.ref?' refcard':'')+(gst?' guest':'')+(nd.famous?' famous':'')+(cz.route.has(nd.n)?' route':'')+(cz.anc.has(nd.n)?' hl':'');
+    var p=nd.p, isRoot=nd.n===view, nm=esc(p.name), gst=nd.guest, isRep=!!(nd.rep||p.ref);
+    var cls='card'+(isRoot?' root':'')+(isRep?' refcard':'')+(gst?' guest':'')+(nd.famous?' famous':'')+(cz.route.has(nd.n)?' route':'')+(cz.anc.has(nd.n)?' hl':'');
     var av=gst?'':photoOf(nd.n);
-    h+='<div class="'+cls+'" data-n="'+nd.n+'"'+(p.ref?' tabindex="0" title="Repeat of a person shown elsewhere. Click to highlight the original card."':'')+' style="left:'+xOf(nd.d)+'px;top:'+topOf(nd)+'px;--lc:'+lc(nd.n)+'">'+
+    h+='<div class="'+cls+'" data-n="'+nd.n+'"'+(isRep?' tabindex="0" title="'+nm+' is also drawn elsewhere in the chart. Click to go to the full card."':'')+' style="left:'+xOf(nd.d)+'px;top:'+topOf(nd)+'px;--lc:'+lc(nd.n)+'">'+
       (av?'<img class="av" alt="" src="'+esc(av)+'">':'')+
       '<div class="who"><span class="nm" title="'+nm+'">'+nm+'</span><span class="yr"><i class="dot"></i>'+esc(gst&&!p.b&&!p.d?'—':years(p))+'</span></div>'+
       (p.wiki?'<a class="ico wiki" href="https://en.wikipedia.org/wiki/'+encodeURI(p.wiki)+'" target="_blank" rel="noopener noreferrer" aria-label="Open the Wikipedia article for '+nm+' in a new tab" title="Wikipedia article (opens in a new tab)"><span class="wglyph" aria-hidden="true">W</span></a>':'')+
       (isRoot||gst?'':'<a class="ico" href="#p'+(p.ref!=null&&P.has(p.ref)?p.ref:nd.n)+'" data-act="tree" aria-label="View the tree of '+nm+'" title="View '+nm+'’s tree">'+ICON_TREE+'</a>')+
       (editing&&!gst?'<button class="ico pen" type="button" data-act="edit" aria-label="Edit '+nm+'" title="Edit">'+ICON_PEN+'</button>':'')+
-      '<button class="ico" type="button" data-act="details" aria-expanded="false" aria-label="Details for '+nm+'" title="Details">'+ICON_CHEV+'</button>'+
+      (isRep?'':'<button class="ico" type="button" data-act="details" aria-expanded="false" aria-label="Details for '+nm+'" title="Details">'+ICON_CHEV+'</button>')+
       (nd.more?'<a class="beyond" href="#p'+nd.n+'" data-act="tree" aria-label="Ancestors of '+nm+' continue further back. View their tree." title="More ancestors further back">&#8250;</a>':'')+
       (!gst&&!isRoot&&dnaOf(nd.n)?'<span class="cdna" title="'+esc(dnaTip(dnaOf(nd.n)))+'" aria-label="'+esc(dnaTip(dnaOf(nd.n)))+'" role="img">'+ICON_DNA+'</span>':'')+
       (nd.famous?'<span class="cstar" title="Famous relative" aria-hidden="true">&#9733;</span>':(czOn&&p.star?'<span class="cstar" title="'+esc(p.star)+'" aria-label="'+esc(p.star)+'">&#9733;</span>':''))+
@@ -213,7 +323,7 @@ function render(keep){
   $('#sub').innerHTML=isHome
     ? esc(years(rp))+(STATE.sample?' · <span class="samp">Sample tree</span> Press Edit to make it your own.':'')
     : esc(relAll(view))+' of '+esc(first())+' · '+esc(years(rp))+' · <a href="#p1" data-act="tree">Back to '+esc(first())+'’s tree</a>';
-  var real=nodes.filter(function(x){return !x.guest&&!x.hap&&!x.add}), nReal=real.length;
+  var real=nodes.filter(function(x){return !x.guest&&!x.hap&&!x.add&&!x.rep}), nReal=real.length;
   var filled=real.reduce(function(m,x){return Math.max(m,x.d+1)},1);
   $('#status').textContent=nReal+(nReal===1?' person':' people')+' shown · '+filled+' of '+D+' generations filled';
   applyCousins();
@@ -347,8 +457,11 @@ function ancLabel(g,male){
 function famRels(f){
   var out=[];
   f.via.forEach(function(v){
-    var g=ANC.get(v.anc); if(g==null||(v.k===0&&g===0)) return;
-    out.push({v:v,g:g,label:v.k===0?ancLabel(g,v.male):relLabel(g,v.k,v.half),rank:g+v.k+(v.half?0.5:0)});
+    if(!ANC.has(v.anc)) return;
+    allDepths(view,v.anc).forEach(function(g){
+      if(v.k===0&&g===0) return;
+      out.push({v:v,g:g,label:v.k===0?ancLabel(g,v.male):relLabel(g,v.k,v.half),rank:g+v.k+(v.half?0.5:0)});
+    });
   });
   out.sort(function(a,b){return a.rank-b.rank});
   return out;
@@ -480,7 +593,7 @@ function addGuests(nodes,seen,view0,addEdge){
   }
   czSel.forEach(function(vi,name){
     var f=FAMOUS.filter(function(x){return x.name===name})[0]; if(!f) return;
-    var ok=famRels(f).filter(function(r){return r.g-r.v.k>=0&&seen.has(r.v.anc)});
+    var ok=famRels(f).filter(function(r){return seen.has(r.v.anc)&&seen.get(r.v.anc).d-r.v.k>=0});
     if(!ok.length) return;
     var r=ok[Math.min(vi,ok.length-1)], A=seen.get(r.v.anc), sp=r.v.sp&&seen.get(r.v.sp);
     out.anc.add(r.v.anc); if(sp) out.anc.add(r.v.sp);
@@ -492,7 +605,7 @@ function addGuests(nodes,seen,view0,addEdge){
       key+='|'+e[0];
       var nd=gk.get(key);
       if(!nd){
-        nd={n:-(++gid), d:r.g-j, guest:true, j:j, g:r.g, half:!!r.v.half, to:[],
+        nd={n:-(++gid), d:A.d-j, guest:true, j:j, g:r.g, half:!!r.v.half, to:[],
             kids:i===0?(sp?[A,sp]:[A]):[prev], p:{name:e[0]==='…'?'(name not recorded)':e[0], b:e[1], d:e[2]}};
         nd.via=(i===0?ancNames(r.v):'')+(i===0?' → ':'')+r.v.path.slice(0,j).map(function(x){return x[0]}).join(' → ');
         pending.push(nd); gk.set(key,nd); GUEST.set(nd.n,nd);
@@ -616,7 +729,7 @@ function applyCousins(){
     shown.forEach(function(x){
       var f=x.f, can=x.routes.length>0, sel=czSel.has(f.name);
       var vi=sel?Math.min(czSel.get(f.name),x.routes.length-1):0, r=can?x.routes[vi]:x.rels[0];
-      var others=x.rels.filter(function(e){return e.v!==r.v}).map(function(e){return e.label}).filter(function(l,i,a){return a.indexOf(l)===i&&l!==r.label}).join('; ');
+      var others=x.rels.filter(function(e){return e!==r}).map(function(e){return e.label}).filter(function(l,i,a){return a.indexOf(l)===i&&l!==r.label}).join('; ');
       h+='<li><button class="czi" type="button" data-cz="'+esc(f.name)+'" aria-pressed="'+(sel?'true':'false')+'"'+(can?'':' aria-disabled="true"')+'>'+
         '<span class="n2">'+(sel?'<span class="sdot" aria-hidden="true">&#9733;</span> ':'')+esc(f.name)+'</span> <span class="t2">'+esc(f.title)+(f.b?' · '+f.b+'–'+(f.d||'Living'):'')+'</span>'+
         '<span class="r2">'+esc(cap(r.label))+(others?' <span class="t2">· also '+esc(others)+'</span>':'')+'</span>'+
@@ -689,7 +802,7 @@ function popHTML(n){
   var link=function(m){return '<a href="#p'+m+'" data-act="tree">'+esc(P.get(m).name)+'</a>'};
   var srcs=p.src||[];
   var cite=function(f){ var ix=[]; srcs.forEach(function(s,i){ if(s.f===f) ix.push(i+1) }); return ix.length?'<sup class="cite" title="Sources '+ix.join(', ')+'">'+ix.join(',')+'</sup>':'' };
-  add('Relation', n===1?'Self':esc(relTo(n))+' of '+esc(first()));
+  add('Relation', n===1?'Self':esc(relAll(n))+' of '+esc(first()));
   var rt=ratioText(n); if(rt) add('Ancestor ratio',rt);
   add('Sex',esc(SEXW[sexOf(n)]));
   if(p.bname&&p.bname!==p.name) add('Birth name',esc(p.bname)+cite('name'));
@@ -748,7 +861,7 @@ function popHTML(n){
       '<button class="btn" type="button" data-act="close">Close</button>'+
     '</div>';
 }
-function cardEl(n){return world.querySelector('.card[data-n="'+n+'"]')}
+function cardEl(n){return world.querySelector('.card[data-n="'+n+'"]:not(.refcard)')||world.querySelector('.card[data-n="'+n+'"]')}
 function ensureVisible(card){
   var v=vp.getBoundingClientRect(), r=card.getBoundingClientRect(), pad=12;
   if(r.left<v.left+pad) vp.scrollLeft-=(v.left+pad-r.left);
@@ -811,7 +924,7 @@ window.addEventListener('popstate',function(){setView(readHash())});
 var refTimer=0;
 function clearRefHl(){ world.querySelectorAll('.card.refhl').forEach(function(c){c.classList.remove('refhl')}) }
 function showRef(card){
-  var p=P.get(+card.getAttribute('data-n')), o=p&&cardEl(p.ref);
+  var n=+card.getAttribute('data-n'), p=P.get(n), o=p&&cardEl(p.ref!=null?p.ref:n);
   clearRefHl(); clearTimeout(refTimer);
   if(!o) return;
   o.classList.add('refhl'); centerOn([o]);

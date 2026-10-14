@@ -111,6 +111,7 @@ function rebuild(){
   });
   FAMOUS=out;
   RATIO={root:null,w:null,c:null};
+  DEPTHS=new Map();
   fillDepth();
 }
 var dnaOf=function(n){ var p=P.get(n); return DNAOF.get(p&&p.ref!=null?p.ref:n) };
@@ -129,10 +130,27 @@ function relTo(n){
   var base=m?'great-grandfather':'great-grandmother';
   return d===3?cap(base):ord(d-2)+' '+base;
 }
+/* Every number of generations between two people (more than one with pedigree collapse). */
+var DEPTHS=new Map();
+function allDepths(from,to){
+  var key=from+'>'+to; if(DEPTHS.has(key)) return DEPTHS.get(key);
+  var out=[], layer=new Set([from]);
+  for(var g=0;g<=MAXDEPTH+2&&layer.size;g++){
+    if(layer.has(to)) out.push(g);
+    var nx=new Set(); layer.forEach(function(x){ [fa(x),mo(x)].forEach(function(m){ if(P.has(m)) nx.add(m) }) }); layer=nx;
+  }
+  DEPTHS.set(key,out); return out;
+}
+function relAtDepth(d,male){
+  if(!d) return 'Self';
+  if(d===1) return male?'Father':'Mother';
+  if(d===2) return male?'Grandfather':'Grandmother';
+  var base=male?'great-grandfather':'great-grandmother';
+  return d===3?cap(base):ord(d-2)+' '+base;
+}
 function relAll(n){
-  var ns=[n]; DATA.forEach(function(p){ if(p.ref===n) ns.push(p.n) });
-  ns.sort(function(a,b){return dep(a)-dep(b)});
-  var rs=[]; ns.forEach(function(x){var r=relTo(x); if(rs.indexOf(r)<0) rs.push(r)});
+  var ds=allDepths(1,n); if(!ds.length) ds=[dep(n)];
+  var rs=[]; ds.forEach(function(d){var r=relAtDepth(d,n%2===0); if(rs.indexOf(r)<0) rs.push(r)});
   if(rs.length<2) return rs[0];
   var parts=rs.map(function(r){var m=/^(\d+(?:st|nd|rd|th) )?(.*)$/.exec(r);return {o:(m[1]||'').trim(),b:m[2]}});
   if(parts.every(function(p){return p.b===parts[0].b&&p.o})) return parts.map(function(p){return p.o}).join(' and ')+' '+parts[0].b;

@@ -8,7 +8,7 @@
   try{ var s=localStorage.getItem(LSKEY); if(s){ var o=JSON.parse(s); if(valid(o)) STATE=normalize(o) } }catch(_){}
 })();
 rebuild();
-depth=Math.min(5,MAXGEN); sel.value=depth;
+fitDepth(savedDepth()||5);
 view=readHash();
 render();
 resetHistory();
