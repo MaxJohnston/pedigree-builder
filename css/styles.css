@@ -344,7 +344,7 @@ select{padding:0 8px}
 .linked{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px;padding:8px 10px;border:1px dashed var(--rule);border-radius:6px;font-size:13px}
 .linked b{font-weight:500}
 .filein input{padding:7px;background:var(--surface)}
-.route{display:grid;gap:10px;padding:12px;border:1px solid var(--rule-soft);border-radius:8px;background:var(--band)}
+.routebox{display:grid;gap:10px;padding:12px;border:1px solid var(--rule-soft);border-radius:8px;background:var(--band)}
 .rhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .rhead b{font:500 13px var(--font-ui)}
 .rhead .btn{height:28px;font-size:12px}

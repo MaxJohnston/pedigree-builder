@@ -544,7 +544,7 @@ function personOptions(sel){
 }
 function routeBlock(r,i){
   var lines=(r.path||[]).map(function(e){return [e[0],e[1],e[2]].filter(function(x){return x!=null&&x!==''}).join(', ')}).join('\n');
-  return '<div class="route">'+
+  return '<div class="routebox">'+
     '<div class="rhead"><b>Route '+(i+1)+'</b><button class="btn" type="button" data-s="rm-route">Remove route</button></div>'+
     '<label class="f"><span>Shared ancestor</span><select name="ranc">'+personOptions(r.anc)+'</select></label>'+
     '<label class="chk"><input type="checkbox" name="rhalf"'+(r.half?' checked':'')+'> Related through this ancestor only (half relation)</label>'+
@@ -582,7 +582,7 @@ function famousForm(id){
     var by=parseYear(fval(form,'fb'),'Born'), dy=parseYear(fval(form,'fd'),'Died');
     if(by.err){sheetErr(by.err);return} if(dy.err){sheetErr(dy.err);return}
     var routes=[], bad='';
-    form.querySelectorAll('.route').forEach(function(rb,i){
+    form.querySelectorAll('.routebox').forEach(function(rb,i){
       var anc=+rb.querySelector('[name="ranc"]').value;
       var txt=rb.querySelector('[name="rpath"]').value;
       if(!anc){ if(txt.trim()) bad='Route '+(i+1)+': choose the shared ancestor.'; return }
@@ -721,7 +721,7 @@ sheet.addEventListener('click',function(e){
   else if(s==='add-src'){ var sr=sheet.querySelector('#srcrows'); sr.insertAdjacentHTML('beforeend',srcRow({})); sr.lastElementChild.querySelector('input').focus(); }
   else if(s==='rm-photo'){ pendingPhoto=null; var im=sheet.querySelector('#f-phimg'); if(im){im.hidden=true;im.removeAttribute('src')} b.hidden=true; var fi=sheet.querySelector('#f-photo'); if(fi) fi.value=''; }
   else if(s==='add-route'){ var R=sheet.querySelector('#routes'); R.insertAdjacentHTML('beforeend',routeBlock({},R.children.length)); R.lastElementChild.querySelector('select').focus(); }
-  else if(s==='rm-route'){ var R2=sheet.querySelector('#routes'); b.closest('.route').remove(); [].forEach.call(R2.children,function(x,i){x.querySelector('.rhead b').textContent='Route '+(i+1)}); }
+  else if(s==='rm-route'){ var R2=sheet.querySelector('#routes'); b.closest('.routebox').remove(); [].forEach.call(R2.children,function(x,i){x.querySelector('.rhead b').textContent='Route '+(i+1)}); }
   else if(s==='del'){
     var gone=removalSet(curN), extra=gone.size-1, nm=P.get(curN).name;
     confirmBox('Delete '+esc(nm)+(extra?' and the '+extra+' '+(extra===1?'ancestor':'ancestors')+' recorded behind them':'')+'? This cannot be undone.','Delete','del-yes');
