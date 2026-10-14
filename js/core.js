@@ -15,6 +15,21 @@ var DATA=[], P=new Map(), KIDS=new Map(), FAMOUS=[], HAPLO=[], DNA=[], DNAOF=new
 var $=function(s){return document.querySelector(s)};
 var stage=$('#stage'), vp=$('#vp'), sizer=$('#sizer'), world=$('#world'), pop=$('#pop'), heads=$('#heads'), hin=$('#hin'), lg=$('#legend');
 var narrow=window.matchMedia('(max-width:640px)');
+
+/* Links: a person's or famous relative's `wiki` is either a Wikipedia article title (Thomas_Jefferson) or the full
+   address of any web page (for example a page on another wiki). */
+var isUrl=function(w){ return /^https?:\/\//i.test(String(w||'')) };
+function wikiHref(w){ return isUrl(w)?w:'https://en.wikipedia.org/wiki/'+encodeURI(w) }
+function wikiSite(w){
+  if(!isUrl(w)||/wikipedia\.org/i.test(w)) return 'Wikipedia';
+  var h=''; try{ h=new URL(w).hostname }catch(_){}
+  return /awoiaf|westeros\.org/i.test(h)?'A Wiki of Ice and Fire':(h.replace(/^www\./,'')||'Link');
+}
+function wikiText(w){
+  if(!isUrl(w)) return String(w).replace(/_/g,' ');
+  try{ var u=new URL(w), seg=u.pathname.split('/').filter(Boolean).pop(); return decodeURIComponent(seg||u.hostname).replace(/_/g,' ') }catch(_){ return w }
+}
+function wikiAria(w,name){ return wikiSite(w)==='Wikipedia'?'Open the Wikipedia article for '+name+' in a new tab':'Open the '+wikiSite(w)+' page for '+name+' in a new tab' }
 var view=1, depth=5, scale=1, ww=800, wh=400, openN=null, rootCy=0, editing=false;
 
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
@@ -112,7 +127,7 @@ function rebuild(){
       return v;
     });
     if(!via.length) return;
-    out.push({name:f.name, title:f.title||'Famous relative', b:f.b, d:f.d, wiki:f.wiki, via:via});
+    out.push({name:f.name, title:f.title||'Famous relative', sex:f.sex, b:f.b, d:f.d, wiki:f.wiki, via:via});
   });
   FAMOUS=out;
   RATIO={root:null,w:null,c:null};

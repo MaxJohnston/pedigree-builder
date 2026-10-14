@@ -139,7 +139,7 @@ The form is divided into sections:
 
 **Photo:** choose an image file. It is shrunk to a small portrait (at most 240 pixels across) so the tree stays light.
 
-**Fame and links:** *Notable for* marks this person as a famous ancestor; *Wikipedia article* adds a link (paste the article's title or address).
+**Fame and links:** *Notable for* marks this person as a famous ancestor; *Wikipedia article or web page* adds a link: paste a Wikipedia article's title or address, or the address of any other page (a different wiki, a memorial page and so on). The link's site name is shown in the details panel.
 
 **Haplogroups** and **DNA confirmation:** see [DNA](#dna-tests-confirmations-and-haplogroups).
 
@@ -225,13 +225,13 @@ Click a relative in the panel to draw their line of descent on the chart. If you
 
 **Adding a famous relative:** in edit mode, click **Famous relatives → + Add famous relative**, then:
 
-1. Enter their name, what they are known for, their birth and death years, and optionally their Wikipedia article.
+1. Enter their name, what they are known for, their sex (used for words such as *aunt*, *niece* and *sister*), their birth and death years, and optionally a link (a Wikipedia article or any web page). Each famous relative needs a different name; add something like *(son of Rhaegar)* to tell two people with the same name apart.
 2. Under **How you are related**, choose the **shared ancestor** from your tree.
 3. In **Line of descent**, list the generations from that ancestor's child down to the famous person's **parent**, one per line, as *name, born, died*. For example, for a relative who is a grandchild of the shared ancestor:
    ```
    Ruth Whitaker, 1899, 1978
    ```
-   Leave it empty if the famous person is the ancestor's own child. Use `…` for a generation whose name is not known.
+   Leave it empty if the famous person is the ancestor's own child. Use `…` for a generation whose name is not known. Add `M` or `F` as a fourth item (`Ruth Whitaker, 1899, 1978, F`) to label that person's card correctly when the line is drawn.
 4. Tick **half relation** if you descend from only one of the ancestor's partners.
 5. Add another route if you are related more than one way.
 
@@ -326,7 +326,7 @@ Importing **replaces your current tree**. You are asked to confirm first, and yo
 - **Start a blank tree…** replaces everything with a single person.
 - **Load the sample tree…** brings back the Whitaker sample.
 - **Load the royal sample tree…** loads the ancestry of King Edward VII, which shows pedigree collapse and parent order (see [the royal example](#example-pedigree-collapse-in-a-royal-family)).
-- **Load the Targaryen sample tree…** loads the fictional ancestry of Jon Snow from *A Song of Ice and Fire*, twenty generations deep. Generations of marriages between relatives (brother and sister, uncle and niece, cousins) make many ancestors appear more than once, so it is a good test of lines that skip columns. Rickard Stark is set to *Show mother above father*, which keeps the Stark lines from crossing.
+- **Load the Targaryen sample tree…** loads the fictional ancestry of Jon Snow from *A Song of Ice and Fire*, twenty generations deep. Generations of marriages between relatives (brother and sister, uncle and niece, cousins) make many ancestors appear more than once, so it is a good test of lines that skip columns. Rickard Stark is set to *Show mother above father*, which keeps the Stark lines from crossing. The eleven kings of the Seven Kingdoms among Jon's ancestors (Aegon I to Aerys II) and the contested queen Rhaenyra carry the ★ badge, and 84 aunts, uncles, cousins and half-siblings, from Daenerys and the Starks back to Visenya and Orys Baratheon, are recorded as famous relatives. Each person with a ★ or in the famous list links to their page on A Wiki of Ice and Fire.
 
 All of these can be undone.
 
@@ -453,7 +453,7 @@ Top-level fields:
 | Field | Meaning |
 | --- | --- |
 | `people` | Everyone in the tree (see below). |
-| `famous` | Famous relatives: `name`, `title`, `b`, `d`, `wiki`, and `routes` (each with `anc`, the shared ancestor's number; optional `sp`, the partner; `half`; `note`; and `path`, a list of `[name, born, died]` from the ancestor's child down to the famous person's parent). |
+| `famous` | Famous relatives: `name`, `title`, `sex` (`M` or `F`), `b`, `d`, `wiki`, and `routes` (each with `anc`, the shared ancestor's number; optional `sp`, the partner; `half`; `note`; and `path`, a list of `[name, born, died, sex]` from the ancestor's child down to the famous person's parent; `sex` is optional). |
 | `haplo` | Haplogroups: `type` (`y` or `mt`), `from` (person number), `code`, optional `url`, `line` and `to` (the last person the line reaches). |
 | `dna` | DNA confirmations: `type` (`self`, `yt`, `mtt`, `match`, `y` or `mt`), `anchor` (person number) and `src`. |
 | `photos` | Photos as small JPEG data URLs, keyed by person number. |
@@ -471,7 +471,7 @@ Person fields (only the ones that are filled in are written):
 | `b`, `bm`, `bdy` | Birth year, month (1–12) and day. `bq`: `abt`, `bef`, `aft` or `bet`; `b2`: the later year for `bet`. |
 | `d`, `dm`, `ddy`, `dq`, `d2` | The same for death. |
 | `bp`, `dp` | Birth and death places. |
-| `occ`, `spouse`, `notes`, `star`, `wiki` | Occupation, spouse, notes, notable for, Wikipedia article title. |
+| `occ`, `spouse`, `notes`, `star`, `wiki` | Occupation, spouse, notes, notable for, and a link: a Wikipedia article title, or the full address (`https://…`) of any page. |
 | `children` | Names of children not in the tree. |
 | `ev` | Events: `t` (kind), `date` (as written), `y` (year), `pl` (place), `tx` (details). |
 | `src` | Sources: `f` (fact supported), `ti` (title), `url`. |
@@ -489,7 +489,7 @@ Every person has a number that says where they sit in the pedigree. The root per
 | --- | --- | --- |
 | `_LIVING Y` | 1 | The person is living. |
 | `_STAR` | 1 | Notable for. |
-| `_WIKI` | 1 | Wikipedia article title. |
+| `_WIKI` | 1 | Wikipedia article title, or the full address of another page. |
 | `_YDNA`, `_MTDNA` | 1 | Haplogroup starting from this person, with optional `2 _URL` and `2 _TO @I…@`. |
 | `_DNA` | 1 | DNA confirmation kind (`self`, `yt`, `mtt`, `match`, `y`, `mt`), with `2 _SRC` for the source. |
 

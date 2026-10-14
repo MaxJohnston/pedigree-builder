@@ -300,7 +300,7 @@ function render(keep){
     h+='<div class="'+cls+'" data-n="'+nd.n+'"'+(isRep?' tabindex="0" title="'+nm+' is also drawn elsewhere in the chart. Click to go to the full card."':'')+' style="left:'+xOf(nd.d)+'px;top:'+topOf(nd)+'px;--lc:'+lc(nd.n)+'">'+
       (av?'<img class="av" alt="" src="'+esc(av)+'">':'')+
       '<div class="who"><span class="nm" title="'+nm+'">'+nm+'</span><span class="yr"><i class="dot"></i>'+esc(gst&&!p.b&&!p.d?'—':years(p))+'</span></div>'+
-      (p.wiki?'<a class="ico wiki" href="https://en.wikipedia.org/wiki/'+encodeURI(p.wiki)+'" target="_blank" rel="noopener noreferrer" aria-label="Open the Wikipedia article for '+nm+' in a new tab" title="Wikipedia article (opens in a new tab)"><span class="wglyph" aria-hidden="true">W</span></a>':'')+
+      (p.wiki?'<a class="ico wiki" href="'+esc(wikiHref(p.wiki))+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(wikiAria(p.wiki,p.name))+'" title="'+esc(wikiSite(p.wiki))+' (opens in a new tab)"><span class="wglyph" aria-hidden="true">W</span></a>':'')+
       (isRoot||gst?'':'<a class="ico" href="#p'+(p.ref!=null&&P.has(p.ref)?p.ref:nd.n)+'" data-act="tree" aria-label="View the tree of '+nm+'" title="View '+nm+'’s tree">'+ICON_TREE+'</a>')+
       (editing&&!gst?'<button class="ico pen" type="button" data-act="edit" aria-label="Edit '+nm+'" title="Edit">'+ICON_PEN+'</button>':'')+
       (isRep?'':'<button class="ico" type="button" data-act="details" aria-expanded="false" aria-label="Details for '+nm+'" title="Details">'+ICON_CHEV+'</button>')+
@@ -437,14 +437,14 @@ function ratioText(n){
   return out;
 }
 function greatPre(g){return g<=0?'':g===1?'great-':ord(g)+' great-'}
-function relLabel(g,k,half){
-  var pre=half?'half-':'';
-  if(g===0) return k===1?'son':k===2?'grandson':k===3?'great-grandson':ord(k-2)+' great-grandson';
+function relLabel(g,k,half,fem){
+  var pre=half?'half-':'', W=fem?['daughter','granddaughter','sister','aunt','niece']:['son','grandson','brother','uncle','nephew'];
+  if(g===0) return k===1?W[0]:k===2?W[1]:k===3?'great-'+W[1]:ord(k-2)+' great-'+W[1];
   var m=Math.min(g,k), diff=Math.abs(g-k);
   if(m===1){
-    if(g===k) return pre+'brother';
-    if(k<g) return pre+greatPre(diff-1)+'uncle';
-    return pre+(diff===1?'':diff===2?'grand-':diff===3?'great-grand-':ord(diff-2)+' great-grand-')+'nephew';
+    if(g===k) return pre+W[2];
+    if(k<g) return pre+greatPre(diff-1)+W[3];
+    return pre+(diff===1?'':diff===2?'grand-':diff===3?'great-grand-':ord(diff-2)+' great-grand-')+W[4];
   }
   var s=(half?'half ':'')+ord(m-1)+' cousin';
   if(diff) s+=', '+(diff===1?'once':diff===2?'twice':diff+'×')+' removed';
@@ -462,7 +462,7 @@ function famRels(f){
     if(!ANC.has(v.anc)) return;
     allDepths(view,v.anc).forEach(function(g){
       if(v.k===0&&g===0) return;
-      out.push({v:v,g:g,label:v.k===0?ancLabel(g,v.male):relLabel(g,v.k,v.half),rank:g+v.k+(v.half?0.5:0)});
+      out.push({v:v,g:g,label:v.k===0?ancLabel(g,v.male):relLabel(g,v.k,v.half,f.sex==='F'),rank:g+v.k+(v.half?0.5:0)});
     });
   });
   out.sort(function(a,b){return a.rank-b.rank});
@@ -607,13 +607,13 @@ function addGuests(nodes,seen,view0,addEdge){
       key+='|'+e[0];
       var nd=gk.get(key);
       if(!nd){
-        nd={n:-(++gid), d:A.d-j, guest:true, j:j, g:r.g, half:!!r.v.half, to:[],
+        nd={n:-(++gid), d:A.d-j, guest:true, j:j, g:r.g, half:!!r.v.half, fem:last?f.sex==='F':e[3]==='F', to:[],
             kids:i===0?(sp?[A,sp]:[A]):[prev], p:{name:e[0]==='…'?'(name not recorded)':e[0], b:e[1], d:e[2]}};
         nd.via=(i===0?ancNames(r.v):'')+(i===0?' → ':'')+r.v.path.slice(0,j).map(function(x){return x[0]}).join(' → ');
         pending.push(nd); gk.set(key,nd); GUEST.set(nd.n,nd);
       }
       if(!last){ var f2=FAMOUS.filter(function(x){return x.name===e[0]})[0];
-        if(f2){ nd.famous=f2; nd.p={name:f2.name,b:f2.b,d:f2.d,wiki:f2.wiki}; } }
+        if(f2){ nd.famous=f2; nd.fem=f2.sex==='F'; nd.p={name:f2.name,b:f2.b,d:f2.d,wiki:f2.wiki}; } }
       if(nd.to.indexOf(f.name)<0) nd.to.push(f.name);
       if(last){
         nd.famous=f; nd.p={name:f.name,b:f.b,d:f.d,wiki:f.wiki};
@@ -696,14 +696,14 @@ function guestPop(n){
   var nd=GUEST.get(n); if(!nd) return '';
   var p=nd.p, f=nd.famous, rows=[];
   var add=function(k,v){rows.push('<dt>'+k+'</dt><dd>'+v+'</dd>')};
-  var lab=relLabel(nd.g,nd.j,nd.half);
+  var lab=relLabel(nd.g,nd.j,nd.half,nd.fem);
   add('Relation',esc(cap(lab))+' of '+esc(czPerson()));
   if(f) add('Title',esc(f.title));
   if(f&&f.b&&f.d) add('Lived','about '+(f.d-f.b)+' years');
   add('Descent','<span class="mute">'+esc(nd.via)+'</span>');
   if(nd.note) add('Note',esc('Shared line runs '+nd.note+'.'));
   if(!f) add('Leads to',esc(nd.to.join(', ')));
-  if(f&&f.wiki) add('Wikipedia','<a href="https://en.wikipedia.org/wiki/'+encodeURI(f.wiki)+'" target="_blank" rel="noopener noreferrer">'+esc(f.wiki.replace(/_/g,' '))+' ↗</a>');
+  if(f&&f.wiki) add(esc(wikiSite(f.wiki)),'<a href="'+esc(wikiHref(f.wiki))+'" target="_blank" rel="noopener noreferrer">'+esc(wikiText(f.wiki))+' ↗</a>');
   return '<h2>'+esc(p.name)+'</h2><p class="life">'+esc(p.b||p.d?years(p):'Dates not shown')+'</p>'+
     '<dl>'+rows.join('')+'</dl>'+
     '<p class="hint">Shown for reference. This relative is not part of the direct pedigree.</p>'+
@@ -733,11 +733,11 @@ function applyCousins(){
       var vi=sel?Math.min(czSel.get(f.name),x.routes.length-1):0, r=can?x.routes[vi]:x.rels[0];
       var others=x.rels.filter(function(e){return e!==r}).map(function(e){return e.label}).filter(function(l,i,a){return a.indexOf(l)===i&&l!==r.label}).join('; ');
       h+='<li><button class="czi" type="button" data-cz="'+esc(f.name)+'" aria-pressed="'+(sel?'true':'false')+'"'+(can?'':' aria-disabled="true"')+'>'+
-        '<span class="n2">'+(sel?'<span class="sdot" aria-hidden="true">&#9733;</span> ':'')+esc(f.name)+'</span> <span class="t2">'+esc(f.title)+(f.b?' · '+f.b+'–'+(f.d||'Living'):'')+'</span>'+
+        '<span class="n2">'+(sel?'<span class="sdot" aria-hidden="true">&#9733;</span> ':'')+esc(f.name)+'</span> <span class="t2">'+esc(f.title)+(f.b||f.d?' · '+(f.b&&f.d?f.b+'–'+f.d:f.b?'b. '+f.b:'d. '+f.d):'')+'</span>'+
         '<span class="r2">'+esc(cap(r.label))+(others?' <span class="t2">· also '+esc(others)+'</span>':'')+'</span>'+
         '<span class="v2">'+esc(viaText(r,f))+'</span>'+
         '<span class="v2">'+(can?(sel?(x.routes.length>1?'Showing route '+(vi+1)+' of '+x.routes.length+' in the tree · click for the next, then to hide':'Shown in the tree · click to hide'):'Click to show in the tree'):'Not drawable from this person’s tree (they are more recent than the root)')+'</span></button>'+
-        (f.wiki?'<a class="ico czw" href="https://en.wikipedia.org/wiki/'+encodeURI(f.wiki)+'" target="_blank" rel="noopener noreferrer" aria-label="Open the Wikipedia article for '+esc(f.name)+' in a new tab" title="Wikipedia article (opens in a new tab)"><span class="wglyph" aria-hidden="true">W</span></a>':'')+'</li>';
+        (f.wiki?'<a class="ico czw" href="'+esc(wikiHref(f.wiki))+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(wikiAria(f.wiki,f.name))+'" title="'+esc(wikiSite(f.wiki))+' (opens in a new tab)"><span class="wglyph" aria-hidden="true">W</span></a>':'')+'</li>';
     });
     h+='</ul>';
   }
@@ -837,7 +837,7 @@ function popHTML(n){
   else add('Parents','<span class="mute">Not recorded yet</span>');
   var g=lineOf(n);
   if(g) add('Line','<i class="dot" style="--lc:var(--l'+g+')"></i> '+esc(lineLabel(g))+' line');
-  if(p.wiki) add('Wikipedia','<a href="https://en.wikipedia.org/wiki/'+encodeURI(p.wiki)+'" target="_blank" rel="noopener noreferrer">'+esc(p.wiki.replace(/_/g,' '))+' ↗</a>');
+  if(p.wiki) add(esc(wikiSite(p.wiki)),'<a href="'+esc(wikiHref(p.wiki))+'" target="_blank" rel="noopener noreferrer">'+esc(wikiText(p.wiki))+' ↗</a>');
   HAPLO.forEach(function(h){
     if(h.members.has(n)) add(h.title,'<a class="hg" href="'+esc(h.url)+'" target="_blank" rel="noopener noreferrer">'+esc(h.code)+' ↗</a> <span class="mute">('+esc(h.line)+')'+(h.to!=null&&P.has(h.end)?' · evidence reaches up to '+esc(P.get(h.end).name):'')+'</span>');
   });

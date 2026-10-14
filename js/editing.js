@@ -50,6 +50,7 @@ function parseYear(s,label){
 }
 function wikiTitle(s){
   s=String(s||'').trim(); if(!s) return undefined;
+  if(isUrl(s)&&!/wikipedia\.org/i.test(s)) return s.replace(/ /g,'_');
   var m=/wikipedia\.org\/wiki\/([^?#]+)/i.exec(s);
   if(m){ try{s=decodeURIComponent(m[1])}catch(_){s=m[1]} }
   return s.replace(/\s+/g,'_');
@@ -157,7 +158,7 @@ function editPerson(n,isNew,child){
     '</fieldset>'+
     '<fieldset><legend>Fame and links</legend>'+
       f1('Notable for','star',p.star||'',{ph:'e.g. Signer of the Declaration of Independence',help:'Fill this in to list this ancestor with the famous relatives (★).'})+
-      f1('Wikipedia article','wiki',(p.wiki||'').replace(/_/g,' '),{ph:'Article title or link'})+
+      f1('Wikipedia article or web page','wiki',p.wiki?(isUrl(p.wiki)?p.wiki:p.wiki.replace(/_/g,' ')):'',{ph:'Wikipedia title, or a link to any page'})+
     '</fieldset>'+
     '<fieldset><legend>Haplogroups</legend>'+
       '<p class="note2">A haplogroup entered here is shown on everyone up this person’s '+(male||isRoot?'father line (Y-DNA) and ':'')+'mother line (mtDNA), with a node at the end of the line, or where the evidence stops if you choose a stopping point.</p>'+
@@ -541,13 +542,13 @@ function personOptions(sel){
   }).join('');
 }
 function routeBlock(r,i){
-  var lines=(r.path||[]).map(function(e){return [e[0],e[1],e[2]].filter(function(x){return x!=null&&x!==''}).join(', ')}).join('\n');
+  var lines=(r.path||[]).map(function(e){ var a=[e[0],e[1]==null?'':e[1],e[2]==null?'':e[2],e[3]||'']; while(a.length>1&&a[a.length-1]==='') a.pop(); return a.join(', ') }).join('\n');
   return '<div class="routebox">'+
     '<div class="rhead"><b>Route '+(i+1)+'</b><button class="btn" type="button" data-s="rm-route">Remove route</button></div>'+
     '<label class="f"><span>Shared ancestor</span><select name="ranc">'+personOptions(r.anc)+'</select></label>'+
     '<label class="chk"><input type="checkbox" name="rhalf"'+(r.half?' checked':'')+'> Related through this ancestor only (half relation)</label>'+
     '<label class="f"><span>Line of descent</span><textarea name="rpath" rows="4" placeholder="Ruth Whitaker, 1899, 1978&#10;…">'+esc(lines)+'</textarea>'+
-    '<small>One person per line, from the ancestor’s child down to the famous person’s parent: name, born, died. Leave empty if the famous person is the ancestor’s child. Use … for a generation whose name is not known.</small></label>'+
+    '<small>One person per line, from the ancestor’s child down to the famous person’s parent: name, born, died, and optionally M or F. Leave empty if the famous person is the ancestor’s child. Use … for a generation whose name is not known.</small></label>'+
     '<label class="f"><span>Note</span><input name="rnote" value="'+esc(r.note||'')+'" placeholder="Optional, e.g. through his first wife" autocomplete="off"></label>'+
   '</div>';
 }
@@ -560,7 +561,8 @@ function famousForm(id){
       f1('Name','fname',f.name||'',{auto:true,ph:'e.g. Thomas Jefferson'})+
       f1('Known for','ftitle',f.title||'',{ph:'e.g. 3rd U.S. President'})+
       '<div class="row2">'+f1('Born (year)','fb',f.b||'',{num:true})+f1('Died (year)','fd',f.d||'',{num:true})+'</div>'+
-      f1('Wikipedia article','fwiki',(f.wiki||'').replace(/_/g,' '),{ph:'Article title or link'})+
+      f1('Wikipedia article or web page','fwiki',f.wiki?(isUrl(f.wiki)?f.wiki:f.wiki.replace(/_/g,' ')):'',{ph:'Wikipedia title, or a link to any page'})+
+      '<label class="f" for="f-fsex"><span>Sex</span><select id="f-fsex" name="fsex"><option value="">Not set</option><option value="M"'+(f.sex==='M'?' selected':'')+'>Male</option><option value="F"'+(f.sex==='F'?' selected':'')+'>Female</option></select><small>Used for words such as aunt, niece and sister.</small></label>'+
     '</fieldset>'+
     '<fieldset><legend>How you are related</legend>'+
       '<p class="note2">Pick the ancestor you share. The shared couple is used unless you tick “half relation”. Add another route if you are related more than one way.</p>'+
@@ -586,8 +588,8 @@ function famousForm(id){
       if(!anc){ if(txt.trim()) bad='Route '+(i+1)+': choose the shared ancestor.'; return }
       var path=txt.split(/\n+/).map(function(s){return s.trim()}).filter(Boolean).map(function(line){
         var parts=line.split(',').map(function(s){return s.trim()});
-        var nm=parts[0]||'…', b=/^\d{3,4}$/.test(parts[1]||'')?+parts[1]:null, d=/^\d{3,4}$/.test(parts[2]||'')?+parts[2]:null;
-        return [nm,b,d];
+        var nm=parts[0]||'…', b=/^\d{1,4}$/.test(parts[1]||'')?+parts[1]:null, d=/^\d{1,4}$/.test(parts[2]||'')?+parts[2]:null, sx=/^[MF]$/i.test(parts[3]||'')?parts[3].toUpperCase():null;
+        return sx?[nm,b,d,sx]:[nm,b,d];
       });
       var r={anc:anc, path:path};
       if(rb.querySelector('[name="rhalf"]').checked) r.half=true;
@@ -596,7 +598,7 @@ function famousForm(id){
     });
     if(bad){sheetErr(bad);return}
     if(!routes.length){sheetErr('Add at least one route: choose the ancestor you share with '+name+'.');return}
-    var o={id:(f&&f.id)||uid('f'), name:name, title:fval(form,'ftitle')||undefined, b:by.v, d:dy.v, wiki:wikiTitle(fval(form,'fwiki')), routes:routes};
+    var o={id:(f&&f.id)||uid('f'), name:name, title:fval(form,'ftitle')||undefined, sex:fval(form,'fsex')||undefined, b:by.v, d:dy.v, wiki:wikiTitle(fval(form,'fwiki')), routes:routes};
     Object.keys(o).forEach(function(k){ if(o[k]===undefined) delete o[k] });
     STATE.famous=STATE.famous||[];
     var i=STATE.famous.findIndex(function(x){return x.id===o.id});
