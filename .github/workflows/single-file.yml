@@ -1,0 +1,22 @@
+# When a release is published on GitHub, build the single-file version of the app
+# and attach it to the release as pedigree-builder.html.
+name: Attach single-file build to release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build dist/pedigree-builder.html
+        run: python3 tools/build-single-file.py
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/pedigree-builder.html --clobber
