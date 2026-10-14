@@ -661,6 +661,27 @@ $('#czp').addEventListener('click',function(e){
 });
 
 /* ---------- details popover ---------- */
+/* Length of life. With full birth and death dates: "75 years, 9 months, 6 days". With months but no days: "about 75 years, 9 months".
+   Otherwise, or when either date is approximate: "about 75 years". */
+function lifespanText(p){
+  if(!p.b||!p.d||p.l) return '';
+  var pl=function(n,w){ return n+' '+w+(n===1?'':'s') };
+  if(p.bq||p.dq||!p.bm||!p.dm) return 'about '+pl(p.d-p.b,'year');
+  var exact=!!(p.bdy&&p.ddy), months=(p.d-p.b)*12+(p.dm-p.bm), d=0;
+  if(exact){
+    /* whole months from the birth date (a 31st falls back to the month's last day), then the days left over */
+    if(p.ddy<p.bdy) months--;
+    var dim=function(y2,m2){ return new Date(Date.UTC(y2,m2,0)).getUTCDate() };
+    var ay=p.b+Math.floor((p.bm-1+months)/12), am=((p.bm-1+months)%12+12)%12+1;
+    var anchor=Date.UTC(ay,am-1,Math.min(p.bdy,dim(ay,am)));
+    d=Math.round((Date.UTC(p.d,p.dm-1,p.ddy)-anchor)/864e5);
+  }
+  if(months<0||d<0) return '';
+  var y=Math.floor(months/12), m=months%12;
+  var parts=[]; if(y) parts.push(pl(y,'year')); if(m) parts.push(pl(m,'month')); if(exact&&d) parts.push(pl(d,'day'));
+  if(!parts.length) parts.push(exact?'less than a day':'less than a month');
+  return (exact?'':'about ')+parts.join(', ');
+}
 function popHTML(n){
   if(n<0) return guestPop(n);
   var p=P.get(n), d=dep(n), rows=[];
@@ -673,7 +694,7 @@ function popHTML(n){
   add('Sex',esc(SEXW[sexOf(n)]));
   if(p.bname&&p.bname!==p.name) add('Birth name',esc(p.bname)+cite('name'));
   if(p.mln) add('Married name',esc(p.mln));
-  if(p.b&&p.d) add('Lived','about '+(p.d-p.b)+' years');
+  var lv=lifespanText(p); if(lv) add('Lived',esc(lv));
   var bdt=birthDate(p); if(bdt) add('Born',esc(bdt)+cite('birth'));
   if(!p.l&&p.d) add('Died',esc(fullDate(p,'d'))+cite('death'));
   if(p.bp) add('Born in',esc(p.bp));
