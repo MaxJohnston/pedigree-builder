@@ -157,7 +157,11 @@ function render(keep){
       var S=new Set();
       (function collect(xs){ xs.forEach(function(x){ if(S.has(x)) return; S.add(x); if(x.grp) collect(x.grp); collect(x.kids.filter(function(k){return k.owner===x})) }) })(b.members);
       var others=nodes.filter(function(z){return !S.has(z)});
-      var fits=function(dl){ var ok=true; S.forEach(function(x){ if(ok) others.forEach(function(z){ if(z.d===x.d&&Math.abs(z.y-(x.y+dl))<1-1e-6) ok=false }) }); return ok };
+      /* The block may only move through empty space: in every column it occupies, nobody else may lie inside the stretch
+         its cards cover before and after the move, so it never lands among, wraps around or jumps over other people. */
+      var cols={}; S.forEach(function(x){ var c=cols[x.d]||(cols[x.d]={lo:Infinity,hi:-Infinity}); c.lo=Math.min(c.lo,x.y); c.hi=Math.max(c.hi,x.y) });
+      var fits=function(dl){ return others.every(function(z){ var c=cols[z.d]; if(!c) return true;
+        var lo=Math.min(c.lo,c.lo+dl), hi=Math.max(c.hi,c.hi+dl); return z.y<=lo-1+1e-6||z.y>=hi+1-1e-6 }) };
       var dl=b.want, sg=dl<0?-1:1;
       while(Math.abs(dl)>1e-6&&!fits(dl)) dl=Math.abs(dl)<=0.5?0:dl-sg*0.5;
       if(dl) S.forEach(function(x){ x.y+=dl });
