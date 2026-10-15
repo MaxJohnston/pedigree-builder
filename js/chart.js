@@ -101,7 +101,7 @@ function render(keep){
   /* A line that skips generations runs between the cards of the columns it passes: the free row nearest the parent. */
   /* Lines from one child to a couple further back travel together, aimed at the middle of the couple. */
   function longTarget(u,v){
-    var grp=u.kids.filter(function(k){return k.d===v.d&&k.owner===v.owner});
+    var grp=u.kids.filter(function(k){return k.d===v.d});
     return grp.length?grp.reduce(function(s,k){return s+k.y},0)/grp.length:v.y;
   }
   /* Connectors a generation-skipping line from u to v would cross if it ran across the columns in between at row yc
@@ -128,7 +128,8 @@ function render(keep){
     cands.forEach(function(y){ if(!free(y)) return; var c=crossAt(u,v,y,ty), sc=c*1000+Math.abs(y-ty)+0.3*Math.abs(y-u.y); if(!best||sc<best.s) best={y:y,s:sc,c:c} });
     return best||{y:ty,c:crossAt(u,v,ty,ty)};
   }
-  function corridor(u,v){ return WIDEN.has(v.n)?nearRow(u,v):routeOf(u,v).y }
+  /* One route for a child's lines to both parents: worked out once, for the first parent drawn in that generation. */
+  function corridor(u,v){ var v0=u.kids.filter(function(k){return k.d===v.d})[0]||v; return (WIDEN.has(v0.n)||WIDEN.has(v.n))?nearRow(u,v0):routeOf(u,v0).y }
   /* For a line drawn instead of repeat cards: the free row nearest the child, so the line leaves the child level and
      climbs in its own lane in the widened gap before the parents' generation. */
   function nearRow(u,v){
