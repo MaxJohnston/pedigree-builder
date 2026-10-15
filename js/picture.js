@@ -93,11 +93,18 @@ function saveReadOnly(){
     var head=['<meta charset="utf-8">','<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">','<title>'+esc((P.get(1)||{}).name||'Family tree')+' · Family tree</title>'];
     document.querySelectorAll('link[rel="icon"],link[rel="stylesheet"][href^="https://fonts."]').forEach(function(l){ head.push(l.outerHTML) });
     var css='', js='';
+    /* A read-only page has no use for edit mode, the forms, undo, saving, file import and export or the sample trees:
+       everything marked as edit-only in the source is left out, and so are the edit-only parts of the page. */
+    var cut=function(t){ return t.replace(/\/\*\{edit\*\/[\s\S]*?\/\*\}edit\*\/\n?/g,'') };
     parts.forEach(function(p){
-      if(p.css) css+='<style data-pb>\n'+p.text.replace(/<\/(style)/gi,'<\\/$1')+'\n</style>\n';
-      else js+='<script data-pb>\n'+p.text.replace(/<\/(script)/gi,'<\\/$1')+'\n<\/script>\n';
+      var t=cut(p.text); if(!t.replace(/\/\*[\s\S]*?\*\//g,'').replace(/'use strict';/g,'').trim()) return;
+      if(p.css) css+='<style data-pb>\n'+t.replace(/<\/(style)/gi,'<\\/$1')+'\n</style>\n';
+      else js+='<script data-pb>\n'+t.replace(/<\/(script)/gi,'<\\/$1')+'\n<\/script>\n';
     });
-    var html='<!doctype html>\n<html lang="en">\n<head>\n'+head.join('\n')+'\n'+css+'</head>\n<body>\n'+PB_BODY+'\n'+
+    var tpl=document.createElement('template'); tpl.innerHTML=PB_BODY;
+    tpl.content.querySelectorAll('[data-edit]').forEach(function(el){ el.remove() });
+    var body=tpl.innerHTML.replace(/\n{3,}/g,'\n\n');
+    var html='<!doctype html>\n<html lang="en">\n<head>\n'+head.join('\n')+'\n'+css+'</head>\n<body>\n'+body+'\n'+
       '<script>var PB_EXPORT='+safe(JSON.stringify(data))+';<\/script>\n'+js+'</body>\n</html>\n';
     return saveFile(fileStem()+'-read-only.html',new Blob([html],{type:'text/html'}),'text/html').then(function(r){ toast(saveMsg(r,'page')) });
   },function(){

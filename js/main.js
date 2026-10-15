@@ -6,12 +6,16 @@
 /* ---------- start ---------- */
 (function(){
   if(READONLY){ STATE=normalize(PB_EXPORT.state); document.body.classList.add('readonly'); return }
+/*{edit*/
   try{ var s=localStorage.getItem(LSKEY); if(s){ var o=JSON.parse(s); if(valid(o)) STATE=normalize(o) } }catch(_){}
+/*}edit*/
 })();
 rebuild();
 fitDepth(READONLY?(PB_EXPORT.depth||5):(savedDepth()||5));
 view=readHash();
 if(READONLY&&!location.hash&&P.has(PB_EXPORT.view)) view=PB_EXPORT.view;
 render();
+/*{edit*/
 resetHistory();
 setSave('Saved in this browser');
+/*}edit*/

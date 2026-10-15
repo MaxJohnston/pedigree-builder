@@ -3,6 +3,7 @@
    All files share one global scope and must load in the order listed in index.html. */
 'use strict';
 
+/*{edit*/
 /* ---------- edit mode ---------- */
 var ICON_PEN='<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.8 2.4l2.8 2.8-8.2 8.2-3.5.7.7-3.5z"/><path d="M9.3 3.9l2.8 2.8"/></svg>';
 function setEditing(on){
@@ -15,6 +16,7 @@ function setEditing(on){
 }
 $('#edit').addEventListener('click',function(){setEditing(!editing)});
 
+/*}edit*/
 /* ---------- side sheet (forms) ---------- */
 var sheet=$('#sheet'), scrim=$('#scrim'), sheetFocus=null, sheetSubmit=null;
 function openSheet(html,onSubmit,wide){
@@ -36,6 +38,7 @@ sheet.addEventListener('submit',function(e){
   e.preventDefault();
   if(sheetSubmit) sheetSubmit(e.target);
 });
+/*{edit*/
 function sheetErr(msg){
   var el=sheet.querySelector('.ferr'); if(!el) return;
   el.textContent=msg; el.hidden=!msg;
@@ -89,11 +92,13 @@ var f1=function(label,name,value,opts){
     :'<input id="'+id+'" name="'+name+'" value="'+esc(value)+'"'+(opts.num?' inputmode="numeric" maxlength="'+(opts.max||4)+'" autocomplete="off"':opts.yr?' maxlength="'+(opts.max||10)+'" autocomplete="off" spellcheck="false"':' autocomplete="off"')+(opts.ph?' placeholder="'+esc(opts.ph)+'"':'')+(opts.auto?' autofocus':'')+'>';
   return '<label class="f'+(opts.cls?' '+opts.cls:'')+'" for="'+id+'"><span>'+label+'</span>'+tag+(opts.help?'<small>'+opts.help+'</small>':'')+'</label>';
 };
+/*}edit*/
 function sheetHead(kick,title,sub){
   return '<header class="sh"><div><p class="kicker">'+esc(kick)+'</p><h2 id="sheet-t">'+esc(title)+'</h2>'+(sub?'<p class="sub">'+esc(sub)+'</p>':'')+'</div>'+
     '<button class="btn sq" type="button" data-s="cancel" aria-label="Close">&times;</button></header>';
 }
 
+/*{edit*/
 /* ----- person editor ----- */
 function dnaRow(g,n){
   var ty=g.type||'match', opts=['self'];
@@ -429,15 +434,20 @@ sheet.addEventListener('change',function(e){
   if(e.target.id==='f-file') readImportFile(e.target);
 });
 
+/*}edit*/
 /* ----- search box for linking someone already in the tree ----- */
+/*{edit*/
 var linkCands=[], linkHi=-1;
+/*}edit*/
 function fold(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') }
+/*{edit*/
 function linkMatches(qs){
   var toks=fold(qs).split(/\s+/).filter(Boolean);
   var out=linkCands.filter(function(c){ return toks.every(function(t){return c.hay.indexOf(t)>=0}) });
   if(toks.length) out.sort(function(a,b){ var A=fold(a.name).indexOf(toks[0])===0?0:1, B=fold(b.name).indexOf(toks[0])===0?0:1; return A-B });
   return out.slice(0,40);
 }
+/*}edit*/
 function hiText(t,qs){
   var toks=fold(qs).split(/\s+/).filter(Boolean), f=fold(t), mark=new Array(t.length).fill(false);
   toks.forEach(function(k){ var i=f.indexOf(k); while(i>=0){ for(var j=i;j<i+k.length;j++) mark[j]=true; i=f.indexOf(k,i+k.length) } });
@@ -445,6 +455,7 @@ function hiText(t,qs){
   for(var i=0;i<t.length;i++){ if(mark[i]!==on){ h+=on?'</mark>':'<mark>'; on=mark[i] } h+=esc(t[i]) }
   return h+(on?'</mark>':'');
 }
+/*{edit*/
 function showLinkList(){
   var inp=sheet.querySelector('#f-linkq'), ul=sheet.querySelector('#f-linklist'); if(!inp||!ul) return;
   var res=linkMatches(inp.value);
@@ -742,10 +753,12 @@ function exportFile(btn){
   if(browserSave(f.name,f.txt,'text/plain;charset=utf-8')) say('Saved '+f.name+' to your downloads.');
   else showExportText('Your browser blocked the download.');
 }
+/*}edit*/
 sheet.addEventListener('click',function(e){
   var b=e.target.closest('[data-s]'); if(!b) return;
   var s=b.getAttribute('data-s'), form=sheet.querySelector('form');
   if(s==='cancel') closeSheet();
+/*{edit*/
   else if(s==='add-row'){ var rows=sheet.querySelector('#dnarows'); rows.insertAdjacentHTML('beforeend',dnaRow({type:'match'},curN)); rows.lastElementChild.querySelector('input').focus(); }
   else if(s==='rm-row'){ b.closest('.dnarow').remove(); }
   else if(s==='rm-row2'){ b.parentNode.remove(); }
@@ -790,11 +803,15 @@ sheet.addEventListener('click',function(e){
   else if(s==='ged-export') gedExportClick(b);
   else if(s==='ged-yes') gedImportFinish();
   else if(s==='revert'){ revertTo(+b.getAttribute('data-i')); closeSheet(); }
+/*}edit*/
   else if(s==='rel-swap'){ var t2=relA; relA=relB; relB=t2; relSheet(relA,relB); }
   else if(s==='rel-find'){ findPerson(+b.getAttribute('data-n')); }
+/*{edit*/
   else if(s==='wall-add'){ editPerson(+b.getAttribute('data-n'),true,+b.getAttribute('data-c')); }
+/*}edit*/
   else if(s==='walls-all'){ wallsAll=true; reportSheet(); }
   else if(s==='pl-lvl'){ placesSheet(b.getAttribute('data-v')); }
+/*{edit*/
   else if(s==='copy-exp'){
     var ta2=sheet.querySelector('#f-exp'), pick=function(){ try{ta2.focus();ta2.select();ta2.setSelectionRange(0,ta2.value.length)}catch(_){} };
     try{ navigator.clipboard.writeText(ta2.value).then(function(){ b.textContent='Copied' },function(){ pick(); b.textContent='Text selected. Copy it' }) }
@@ -824,6 +841,7 @@ sheet.addEventListener('click',function(e){
     if(s==='blank-yes'){ if(!editing) setEditing(true); curN=1; editPerson(1,false); }
     else if(editing) setEditing(false);
   }
+/*}edit*/
 });
 var curN=1;
 function flash(n){

@@ -10,7 +10,7 @@ var PB_BODY=(function(){ var b=document.body.cloneNode(true); b.querySelectorAll
 
 var MAXGEN=10, CW=256, CH=48, GAP=64, SLOT=58, MX=24, TOP=14, MAXDEPTH=44;
 var clone=function(o){return JSON.parse(JSON.stringify(o))};
-var STATE=clone(SAMPLE);
+var STATE=READONLY?{people:[]}:clone(SAMPLE);
 var DATA=[], P=new Map(), KIDS=new Map(), FAMOUS=[], HAPLO=[], DNA=[], DNAOF=new Map(), DEEPEST=1;
 var $=function(s){return document.querySelector(s)};
 var stage=$('#stage'), vp=$('#vp'), sizer=$('#sizer'), world=$('#world'), pop=$('#pop'), heads=$('#heads'), hin=$('#hin'), lg=$('#legend');

@@ -40,6 +40,7 @@ function setSave(t){ var el=$('#savest'); if(el) el.textContent=t }
    Each change keeps a snapshot of the tree from before it. View settings (living years, name style, photos) are not
    part of the tree's history, so undo never flips them. Photos are kept by reference, so snapshots stay small. */
 var UNDO=[], REDO=[], HIST=[], LAST=null, PREFKEYS=['showLiving','nameView','hidePhotos','oneCard'];
+/*{edit*/
 function prefsNow(){ var o={}; PREFKEYS.forEach(function(k){ if(STATE[k]!==undefined) o[k]=STATE[k] }); return o }
 function snapshot(){ var o={}; Object.keys(STATE).forEach(function(k){ if(k!=='photos'&&PREFKEYS.indexOf(k)<0) o[k]=STATE[k] }); return {s:JSON.stringify(o), ph:STATE.photos||{}} }
 function restoreSnap(sn){ var pr=prefsNow(); STATE=JSON.parse(sn.s); STATE.photos=sn.ph||{}; Object.assign(STATE,pr) }
@@ -88,12 +89,14 @@ function syncUndo(){
   if(u){ u.disabled=!UNDO.length; u.title=UNDO.length?'Undo: '+UNDO[UNDO.length-1].desc+' (Ctrl+Z)':'Nothing to undo' }
   if(r){ r.disabled=!REDO.length; r.title=REDO.length?'Redo: '+REDO[REDO.length-1].desc+' (Ctrl+Shift+Z)':'Nothing to redo' }
 }
+/*}edit*/
 var toastT=0;
 function toast(msg,act,fn){
   var t=$('#toast'); t.innerHTML=''; var sp=document.createElement('span'); sp.textContent=msg; t.appendChild(sp);
   if(act){ var b=document.createElement('button'); b.type='button'; b.textContent=act; b.onclick=function(){ t.hidden=true; fn() }; t.appendChild(b) }
   t.hidden=false; clearTimeout(toastT); toastT=setTimeout(function(){ t.hidden=true },6000);
 }
+/*{edit*/
 function historySheet(){
   var tm=function(ms){ var d=new Date(ms); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0') };
   var rows=HIST.map(function(h,i){return {h:h,i:i}}).reverse();
@@ -105,11 +108,14 @@ function historySheet(){
     '</div><footer class="sf"><button class="btn" type="button" data-s="cancel">Close</button></footer></div>';
   openSheet(html,null);
 }
+/*}edit*/
 /* The tree is saved in this browser's local storage after every change. */
 function queueSave(){
   if(READONLY) return;
+/*{edit*/
   try{ localStorage.setItem(LSKEY,JSON.stringify(STATE)); setSave('Saved in this browser') }
   catch(_){ setSave('Could not save: this browser’s storage is full or switched off. Export the tree to keep it.') }
+/*}edit*/
 }
 
 /* ---------- controls ---------- */
@@ -150,13 +156,16 @@ document.querySelectorAll('.mwrap>.btn').forEach(function(b){
 document.addEventListener('pointerdown',function(e){ if(!e.target.closest('.mwrap')) closeMenus() });
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){ var open=document.querySelector('.menu:not([hidden])'); if(open){ closeMenus(); var b=document.querySelector('[aria-controls="'+open.id+'"]'); if(b) b.focus(); } }
+/*{edit*/
   if(!(e.ctrlKey||e.metaKey)||e.altKey) return;
   var t=e.target, tag=t&&t.tagName;
   if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(t&&t.isContentEditable)||!sheet.hidden) return;
   var k=String(e.key).toLowerCase();
   if(k==='z'&&!e.shiftKey){ e.preventDefault(); undo() }
   else if((k==='z'&&e.shiftKey)||k==='y'){ e.preventDefault(); redo() }
+/*}edit*/
 });
+/*{edit*/
 $('#editbar').addEventListener('click',function(e){
   var b=e.target.closest('[data-e]'); if(!b) return;
   var a=b.getAttribute('data-e');
@@ -168,3 +177,4 @@ $('#editbar').addEventListener('click',function(e){
   else if(a==='redo') redo();
   else if(a==='history') historySheet();
 });
+/*}edit*/

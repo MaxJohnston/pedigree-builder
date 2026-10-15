@@ -26,6 +26,7 @@ function saveMsg(r,what){
   return 'Your browser blocked the download of the '+what+'. Check its download settings and try again.';
 }
 
+/*{edit*/
 /* ---------- GEDCOM export (5.5.1) ---------- */
 var GMON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 var EV2GED={bapm:'BAPM',chr:'CHR',buri:'BURI',immi:'IMMI',emig:'EMIG',natu:'NATU',resi:'RESI',educ:'EDUC',cens:'CENS',reli:'RELI'};
@@ -338,3 +339,4 @@ function gedImportFinish(){
   commit(true,false,'Imported the GEDCOM file '+from);
   dataMgr('GEDCOM file imported. Use Undo if you want your previous tree back.');
 }
+/*}edit*/

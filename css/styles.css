@@ -215,6 +215,7 @@ select{padding:0 8px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 
 /* ---------- edit mode ---------- */
+/*{edit*/
 .editbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 10px 8px 14px;border:1px dashed var(--edit);border-radius:10px;background:var(--edit-bg);font-size:13px}
 .editbar .lbl{font:600 11px var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--edit)}
 .editbar .tip{color:var(--muted);flex:1 1 260px;min-width:0}
@@ -230,6 +231,7 @@ select{padding:0 8px}
 .lines path.add{stroke:var(--edit);stroke-dasharray:3 4}
 .ico.pen{color:var(--edit)}
 .card.root .ico.pen{color:inherit}
+/*}edit*/
 .samp{display:inline-block;padding:1px 7px;border-radius:99px;border:1px solid var(--edit);color:var(--edit);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-right:2px}
 .btn.danger{color:var(--danger);border-color:var(--danger)}
 .btn.danger:hover{background:var(--danger);color:var(--bg)}
@@ -260,11 +262,15 @@ select{padding:0 8px}
 .chk input{width:16px;height:16px;accent-color:var(--fg);margin:0}
 .note2{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45}
 .note2 b{color:var(--fg);font-weight:500}
+/*{edit*/
 .ferr{margin:0;padding:8px 10px;border-radius:6px;border:1px solid var(--danger);color:var(--danger);font-size:13px}
 .okmsg{margin:0;font-size:13px;color:var(--fg)}
+/*}edit*/
+/*{edit*/
 .dnarows{display:grid;gap:8px}
 .dnarow{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) 32px;gap:6px;align-items:center}
 .dnarow .btn.sq{height:36px}
+/*}edit*/
 .combo{position:relative}
 .combo>label{font-size:12px;color:var(--muted)}
 .combo input[type="search"]{font:400 14px/1.35 var(--font-ui);color:var(--fg);background:var(--bg);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;width:100%;min-width:0}
@@ -275,6 +281,7 @@ select{padding:0 8px}
 .combolist li[aria-selected="true"],.combolist li:hover{background:var(--band)}
 .combolist li.none{cursor:default;color:var(--muted);font-size:13px}
 .combolist mark{background:var(--edit-bg);color:inherit;border-radius:2px}
+/*{edit*/
 .picked{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;border:1.5px solid var(--edit);border-radius:8px;background:var(--edit-bg);font-size:13.5px;color:var(--fg)}
 .picked b{font:500 15px var(--font-display)}
 .newfields{display:flex;flex-direction:column;gap:22px}
@@ -289,6 +296,7 @@ select{padding:0 8px}
 .photorow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
 .photorow img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:1px solid var(--rule)}
 .photorow input[type="file"]{font-size:12.5px;max-width:100%}
+/*}edit*/
 .card .av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none;margin:0 9px 0 -5px;border:1px solid var(--rule-soft);background:var(--band)}
 .pop .pph{float:right;width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 0 6px 10px;border:1px solid var(--rule)}
 .cite{font:500 9.5px var(--font-mono);color:var(--muted);margin-left:2px;vertical-align:super}
@@ -342,10 +350,13 @@ select{padding:0 8px}
 .btn[disabled]{opacity:.45;cursor:default}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;max-width:min(560px,calc(100% - 32px));padding:10px 14px;border-radius:8px;background:var(--fg);color:var(--bg);font-size:13.5px;box-shadow:0 10px 26px rgba(0,0,0,.25);display:flex;gap:12px;align-items:center}
 .toast button{background:transparent;color:inherit;border:1px solid currentColor;border-radius:6px;padding:3px 9px;font:inherit;cursor:pointer}
+/*{edit*/
 .hlist{list-style:none;margin:0;padding:0;display:grid;width:100%}
 .hlist li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule-soft);font-size:13.5px}
 .hlist time{font:400 11.5px var(--font-mono);color:var(--muted);display:block}
+/*}edit*/
 .sheet.wide{width:min(1000px,100%)}
+/*{edit*/
 .linked{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 12px;padding:8px 10px;border:1px dashed var(--rule);border-radius:6px;font-size:13px}
 .linked b{font-weight:500}
 .filein input{padding:7px;background:var(--surface)}
@@ -353,14 +364,19 @@ select{padding:0 8px}
 .rhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .rhead b{font:500 13px var(--font-ui)}
 .rhead .btn{height:28px;font-size:12px}
+/*}edit*/
+/*{edit*/
 .mlist{list-style:none;margin:0;padding:0;display:grid;gap:2px;width:100%}
 .mlist li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--rule-soft);font-size:13.5px}
 .mlist li b{font:500 15px var(--font-display)}
+/*}edit*/
 .mute{color:var(--muted)}
 .btnrow{display:flex;flex-wrap:wrap;gap:8px}
+/*{edit*/
 .confirm{margin:0 18px 14px;padding:12px;border-radius:8px;border:1px solid var(--danger);background:var(--bg);display:grid;gap:10px;font-size:13.5px}
 .sbody .confirm{margin:4px 0 0;width:100%}
 .confirm p{margin:0}
+/*}edit*/
 @media (max-width:640px){
   .sheet{width:100%;border-left:0}
   .row2,.row2.even{grid-template-columns:1fr}
@@ -372,8 +388,12 @@ select{padding:0 8px}
   .row3{grid-template-columns:minmax(0,4.2em) minmax(0,1fr) minmax(0,5.2em)}
   .dnarow{grid-template-columns:1fr 32px}
   .dnarow input{grid-column:1/-1;grid-row:2}
+/*{edit*/
   .editbar .tip{display:none}
+/*}edit*/
 }
 
 /* read-only copy: no edit mode */
+/*{edit*/
 body.readonly #edit,body.readonly #editbar{display:none!important}
+/*}edit*/

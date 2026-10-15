@@ -47,11 +47,11 @@
         <button class="btn mi" type="button" data-x="places">Places and migration</button>
         <button class="btn mi" type="button" data-x="timeline">Timeline</button>
       </div></div>
-    <button class="btn" id="edit" type="button" aria-pressed="false" aria-controls="editbar"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.8 2.4l2.8 2.8-8.2 8.2-3.5.7.7-3.5z"/><path d="M9.3 3.9l2.8 2.8"/></svg>Edit</button>
+    <button class="btn" id="edit" data-edit type="button" aria-pressed="false" aria-controls="editbar"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.8 2.4l2.8 2.8-8.2 8.2-3.5.7.7-3.5z"/><path d="M9.3 3.9l2.8 2.8"/></svg>Edit</button>
   </div>
 </header>
 
-<div class="editbar" id="editbar" role="region" aria-label="Edit mode" hidden>
+<div class="editbar" id="editbar" data-edit role="region" aria-label="Edit mode" hidden>
   <span class="lbl">Editing</span>
   <span class="tip">Use the pencil on a card to change a person. Dashed cards add a missing parent.</span>
   <div class="grp"><button class="btn" type="button" id="undo" data-e="undo" disabled>&#8630; Undo</button><button class="btn" type="button" id="redo" data-e="redo" disabled>Redo &#8631;</button></div>

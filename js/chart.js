@@ -39,11 +39,14 @@ function render(keep){
           if(pn.d===nd.d+1){ nd.kids.push(pn); if(!pn.owner){ pn.owner=nd; visit(m) } }
           else if(pn.d>nd.d+1) nd.kids.push(pn);
           else { var r={n:m,d:nd.d+1,p:pn.p,kids:[],owner:nd,rep:true}; nd.kids.push(r); nodes.push(r) }
-        }else if(!P.has(m)&&withAdd&&dep(m)<=MAXDEPTH){
+        }
+/*{edit*/
+        else if(!P.has(m)&&withAdd&&dep(m)<=MAXDEPTH){
           /* edit mode: a dashed card for each missing parent */
           var a={n:m,d:nd.d+1,p:{name:''},kids:[],owner:nd,add:true,child:n,role:m===fa(n)?'father':'mother',cls:'add',color:'var(--edit)'};
           nd.kids.push(a); nodes.push(a);
         }
+/*}edit*/
       });
       nd.more=(nd.d===D-1)&&(P.has(fa(n))||P.has(mo(n)));
     })(view);
@@ -240,11 +243,13 @@ function render(keep){
     var top1=Infinity; nodes.forEach(function(x){ if(x.y<top1) top1=x.y });
     nodes.forEach(function(x){ x.y-=top1 });
   }
+/*{edit*/
   if(editing){
     build(true); group(); lay(rn); settle(rn,0); centerCross();
     var top2=Infinity; nodes.forEach(function(x){ if(x.y<top2) top2=x.y });
     nodes.forEach(function(x){ x.y-=top2 });
   }
+/*}edit*/
   var czEdges=new Set();
   ANC=ancSteps(view);
   var cz=addGuests(nodes,seen,view,function(k){czEdges.add(k)});
@@ -421,12 +426,14 @@ function render(keep){
         '<span class="ico" aria-hidden="true">&#8599;</span></a>';
       return;
     }
+/*{edit*/
     if(nd.add){
       var cn=esc(P.get(nd.child).name);
       h+='<button type="button" class="card add" data-act="add" data-n="'+nd.n+'" data-child="'+nd.child+'" style="left:'+xOf(nd.d)+'px;top:'+topOf(nd)+'px" aria-label="Add '+nd.role+' of '+cn+'">'+
         '<span class="plus" aria-hidden="true">+</span><span class="who"><span class="nm">Add '+nd.role+'</span><span class="yr">of '+cn+'</span></span></button>';
       return;
     }
+/*}edit*/
     var p=nd.p, isRoot=nd.n===view, nm=esc(p.name), gst=nd.guest, isRep=!!(nd.rep||p.ref);
     var cls='card'+(isRoot?' root':'')+(isRep?' refcard':'')+(gst?' guest':'')+(nd.famous?' famous':'')+(cz.route.has(nd.n)?' route':'')+(cz.anc.has(nd.n)?' hl':'');
     var av=gst?'':photoOf(nd.n);
@@ -435,7 +442,9 @@ function render(keep){
       '<div class="who"><span class="nm" title="'+nm+'">'+nm+'</span><span class="yr"><i class="dot"></i>'+esc(gst&&!p.b&&!p.d?'—':years(p))+'</span></div>'+
       (p.wiki?'<a class="ico wiki" href="'+esc(wikiHref(p.wiki))+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(wikiAria(p.wiki,p.name))+'" title="'+esc(wikiSite(p.wiki))+' (opens in a new tab)"><span class="wglyph" aria-hidden="true">W</span></a>':'')+
       (isRoot||gst?'':'<a class="ico" href="#p'+(p.ref!=null&&P.has(p.ref)?p.ref:nd.n)+'" data-act="tree" aria-label="View the tree of '+nm+'" title="View '+nm+'’s tree">'+ICON_TREE+'</a>')+
+/*{edit*/
       (editing&&!gst?'<button class="ico pen" type="button" data-act="edit" aria-label="Edit '+nm+'" title="Edit">'+ICON_PEN+'</button>':'')+
+/*}edit*/
       (isRep?'':'<button class="ico" type="button" data-act="details" aria-expanded="false" aria-label="Details for '+nm+'" title="Details">'+ICON_CHEV+'</button>')+
       (nd.more?'<a class="beyond" href="#p'+nd.n+'" data-act="tree" aria-label="Ancestors of '+nm+' continue further back. View their tree." title="More ancestors further back">&#8250;</a>':'')+
       (!gst&&!isRoot&&dnaOf(nd.n)?'<span class="cdna" title="'+esc(dnaTip(dnaOf(nd.n)))+'" aria-label="'+esc(dnaTip(dnaOf(nd.n)))+'" role="img">'+ICON_DNA+'</span>':'')+
@@ -1108,7 +1117,9 @@ document.addEventListener('click',function(e){
     var card=t.closest('.card'); if(card) openDetails(+card.getAttribute('data-n'));
   }else if(act==='close'){
     closeDetails();
-  }else if(act==='edit'){
+  }
+/*{edit*/
+  else if(act==='edit'){
     e.preventDefault();
     var cd=t.closest('.card'), en=cd?+cd.getAttribute('data-n'):+t.getAttribute('data-n'), ep=P.get(en);
     if(ep&&ep.ref!=null&&P.has(ep.ref)) refSheet(en);
@@ -1116,6 +1127,7 @@ document.addEventListener('click',function(e){
   }else if(act==='add'){
     editPerson(+t.getAttribute('data-n'),true,+t.getAttribute('data-child'));
   }
+/*}edit*/
 });
 document.addEventListener('pointerdown',function(e){
   if(openN==null) return;
