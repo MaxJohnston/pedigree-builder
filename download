@@ -1,0 +1,10 @@
+# Personal tree exports: keep these out of the public repository
+family-tree-*.txt
+family-tree-*.ged
+family-tree-*.ged.txt
+
+# The single-file build is made by tools/build-single-file.py and attached to releases
+dist/
+
+.DS_Store
+Thumbs.db
