@@ -281,7 +281,9 @@ function render(keep){
     items.sort(function(a,b){return a.lo-b.lo||a.hi-b.hi});
     var near=function(a,b){return a.lo<b.hi+3&&b.lo<a.hi+3};
     var inS=function(y,q){return y>q.lo+1&&y<q.hi-1};
-    var leftCost=function(A,B){ var c=0; A.ky.forEach(function(y){ if(inS(y,B)) c++ }); B.cys.forEach(function(y){ if(inS(y,A)) c++ }); return c };
+    /* A fork on the left whose line into a parent runs at the same height as a line coming in from the left to a fork
+       further right would draw both on top of each other: that costs far more than a crossing. */
+    var leftCost=function(A,B){ var c=0; A.ky.forEach(function(y){ if(inS(y,B)) c++; if(B.cys.some(function(z){return Math.abs(z-y)<2})) c+=50 }); B.cys.forEach(function(y){ if(inS(y,A)) c++ }); return c };
     items.forEach(function(nd){
       var best=null;
       var consider=function(li,reuse,pos){
