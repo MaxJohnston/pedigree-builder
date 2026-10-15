@@ -87,6 +87,11 @@ select{padding:0 8px}
 .band{position:absolute;top:0;bottom:0;background:var(--band)}
 .lines{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
 .lines path{fill:none;stroke:var(--lc,var(--rule));stroke-width:1.5;vector-effect:non-scaling-stroke}
+/* side-by-side forks in one gap: three variations of the line colour (hue turned a little, lighter or darker);
+   browsers without relative colours fall back to a lighter or darker mix */
+.lines path.sh1{stroke:color-mix(in srgb,var(--lc,var(--rule)) 50%,var(--fg));stroke:oklch(from var(--lc,var(--rule)) calc(l + .12) c calc(h + 55))}
+.lines path.sh2{stroke:color-mix(in srgb,var(--lc,var(--rule)) 55%,var(--bg));stroke:oklch(from var(--lc,var(--rule)) calc(l - .1) c calc(h - 55))}
+.lines path.sh3{stroke:color-mix(in srgb,var(--lc,var(--rule)) 70%,var(--fg));stroke:oklch(from var(--lc,var(--rule)) l calc(c * .45) calc(h + 120))}
 
 .heads{position:absolute;left:0;top:0;right:0;height:var(--head-h);z-index:3;overflow:hidden;background:var(--surface);border-bottom:1px solid var(--rule)}
 .hin{position:absolute;left:0;top:0;height:100%}

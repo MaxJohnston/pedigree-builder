@@ -213,7 +213,9 @@ function years(p){
   if(p.d) return 'd. '+yText(p,'d');
   return 'Dates not recorded';
 }
-var xOf=function(c){return MX+c*(CW+GAP)};
+/* XSH[c]: extra width added before column c (a widened gap); see render(). */
+var XSH=[], XEX=[], REPOPT=false;
+var xOf=function(c){return MX+c*(CW+GAP)+(XSH[c]||0)};
 
 /* Grandparent lines are relative to whoever is the root of the current view.
    Slot 4 = father's father, 5 = father's mother, 6 = mother's father, 7 = mother's mother.
@@ -282,8 +284,8 @@ function layoutHeads(){
   heads.style.right=(vp.offsetWidth-vp.clientWidth)+'px';
   for(var i=0;i<kids.length;i++){
     var c=+kids[i].getAttribute('data-c');
-    kids[i].style.left=((xOf(c)-GAP/2)*scale)+'px';
-    kids[i].style.width=w+'px';
+    kids[i].style.left=((xOf(c)-GAP/2-(XEX[c]||0))*scale)+'px';
+    kids[i].style.width=((CW+GAP+(XEX[c]||0))*scale)+'px';
     kids[i].classList.toggle('num',w<150);
   }
 }

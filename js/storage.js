@@ -28,7 +28,7 @@ function unRef(o){
 function normalize(o){
   if(o&&Array.isArray(o.people)) unRef(o);
   var ph={}; if(o.photos&&typeof o.photos==='object') Object.keys(o.photos).forEach(function(k){ if(typeof o.photos[k]==='string'&&PHOTO_OK.test(o.photos[k])) ph[k]=o.photos[k] });
-  return {v:1, sample:!!o.sample, showLiving:!!o.showLiving, nameView:o.nameView==='married'?'married':'birth', hidePhotos:!!o.hidePhotos,
+  return {v:1, sample:!!o.sample, showLiving:!!o.showLiving, nameView:o.nameView==='married'?'married':'birth', hidePhotos:!!o.hidePhotos, oneCard:!!o.oneCard,
     photos:ph,
     people:o.people.filter(function(p){return p&&typeof p.n==='number'&&p.n>=1&&p.name!=null}).map(function(p){p.name=String(p.name);return p}),
     famous:Array.isArray(o.famous)?o.famous.filter(function(f){return f&&f.name}):[],
@@ -39,7 +39,7 @@ function setSave(t){ var el=$('#savest'); if(el) el.textContent=t }
 /* ---------- undo, redo and history ----------
    Each change keeps a snapshot of the tree from before it. View settings (living years, name style, photos) are not
    part of the tree's history, so undo never flips them. Photos are kept by reference, so snapshots stay small. */
-var UNDO=[], REDO=[], HIST=[], LAST=null, PREFKEYS=['showLiving','nameView','hidePhotos'];
+var UNDO=[], REDO=[], HIST=[], LAST=null, PREFKEYS=['showLiving','nameView','hidePhotos','oneCard'];
 function prefsNow(){ var o={}; PREFKEYS.forEach(function(k){ if(STATE[k]!==undefined) o[k]=STATE[k] }); return o }
 function snapshot(){ var o={}; Object.keys(STATE).forEach(function(k){ if(k!=='photos'&&PREFKEYS.indexOf(k)<0) o[k]=STATE[k] }); return {s:JSON.stringify(o), ph:STATE.photos||{}} }
 function restoreSnap(sn){ var pr=prefsNow(); STATE=JSON.parse(sn.s); STATE.photos=sn.ph||{}; Object.assign(STATE,pr) }
@@ -124,9 +124,11 @@ function setPref(k,v){ STATE[k]=v; rebuild(); render(true); queueSave() }
 function syncPrefs(){
   var a=document.getElementById('showliv'); if(a) a.checked=!!STATE.showLiving;
   var b=document.getElementById('showph'); if(b) b.checked=!STATE.hidePhotos;
+  var oc=document.getElementById('onecard'); if(oc) oc.checked=!!STATE.oneCard;
   document.querySelectorAll('input[name="nameview"]').forEach(function(r){ r.checked=r.value===(STATE.nameView||'birth') });
 }
 $('#showliv').addEventListener('change',function(e){ setPref('showLiving',e.target.checked) });
+$('#onecard').addEventListener('change',function(e){ setPref('oneCard',e.target.checked) });
 $('#showph').addEventListener('change',function(e){ setPref('hidePhotos',!e.target.checked) });
 document.querySelectorAll('input[name="nameview"]').forEach(function(r){ r.addEventListener('change',function(){ if(r.checked) setPref('nameView',r.value) }) });
 /* Menus in the toolbar */

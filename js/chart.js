@@ -8,7 +8,8 @@ function render(keep){
   keepDepth();
   closeDetails(true);
   buildLines(view); renderLegend();
-  var D=depth, nodes, seen, rn, split=new Set();
+  var D=depth, nodes, seen, rn, split=new Set(), WIDEN=new Set();
+  XSH=[]; XEX=[];
   /* One column per generation. Someone reached by routes of different lengths (pedigree collapse) is drawn once, in the
      furthest column they reach, and the nearer child gets a longer line that skips the columns in between. If that line
      would cross several others, the person is drawn in the nearest column instead, and each further place gets a dashed
@@ -127,7 +128,16 @@ function render(keep){
     cands.forEach(function(y){ if(!free(y)) return; var c=crossAt(u,v,y,ty), sc=c*1000+Math.abs(y-ty)+0.3*Math.abs(y-u.y); if(!best||sc<best.s) best={y:y,s:sc,c:c} });
     return best||{y:ty,c:crossAt(u,v,ty,ty)};
   }
-  function corridor(u,v){ return routeOf(u,v).y }
+  function corridor(u,v){ return WIDEN.has(v.n)?nearRow(u,v):routeOf(u,v).y }
+  /* For a line drawn instead of repeat cards: the free row nearest the child, so the line leaves the child level and
+     climbs in its own lane in the widened gap before the parents' generation. */
+  function nearRow(u,v){
+    var mids=nodes.filter(function(x){return x.d>u.d&&x.d<v.d});
+    var free=function(y){ return mids.every(function(x){return Math.abs(x.y-y)>=0.5-1e-9}) };
+    var cands=[u.y]; mids.forEach(function(x){ cands.push(x.y-0.5,x.y+0.5) });
+    var best=null; cands.forEach(function(y){ if(free(y)&&(best==null||Math.abs(y-u.y)<Math.abs(best-u.y))) best=y });
+    return best==null?u.y:best;
+  }
   /* 3 or more crossings counts as several. */
   function longCrossings(u,v){ return routeOf(u,v).c }
   /* Parents reached by a line that skips generations start out centred on their nearest child. Slide them, with everyone
@@ -163,6 +173,15 @@ function render(keep){
     if(!bad.length) break;
     bad.forEach(function(m){ split.add(m) });
   }
+  /* "Draw linked ancestors once": no repeat cards. Ancestors that would have been repeated stay in the further
+     generation, and their long lines get a widened gap with a lane of their own. */
+  REPOPT=split.size>0;
+  if(STATE.oneCard&&split.size){
+    split.forEach(function(m){ WIDEN.add(m) }); split.clear();
+    build(false); group(); lay(rn); settle(rn,0); centerCross();
+    var top1=Infinity; nodes.forEach(function(x){ if(x.y<top1) top1=x.y });
+    nodes.forEach(function(x){ x.y-=top1 });
+  }
   if(editing){
     build(true); group(); lay(rn); settle(rn,0); centerCross();
     var top2=Infinity; nodes.forEach(function(x){ if(x.y<top2) top2=x.y });
@@ -187,20 +206,33 @@ function render(keep){
   var maxD=0; nodes.forEach(function(x){if(x.d>maxD)maxD=x.d});
   var topOf=function(nd){return TOP+nd.y*SLOT+(SLOT-CH)/2};
   var cy=function(nd){return topOf(nd)+CH/2};
-  ww=MX*2+(maxD+1)*CW+maxD*GAP+20;
+  /* widen the gap before each generation that receives such a line: one lane per child the lines come from */
+  var WL=new Map();
+  if(WIDEN.size) nodes.forEach(function(u){ u.kids.forEach(function(v){
+    if(v.d>u.d+1&&WIDEN.has(v.n)){ var m=WL.get(v.d)||[]; if(m.indexOf(u.n)<0) m.push(u.n); WL.set(v.d,m) }
+  }) });
+  for(var xc=0,acc=0;xc<=maxD+1;xc++){ acc+=XEX[xc]||0; XSH[xc]=acc }
+  var laneX=function(u,v){ var m=WL.get(v.d)||[]; return xOf(v.d)-GAP-(XEX[v.d]||0)+16+12*Math.max(0,m.indexOf(u.n)) };
+  ww=MX*2+(maxD+1)*CW+maxD*GAP+20+(XSH[maxD]||0);
   wh=Math.max(TOP+(maxY+1)*SLOT+16,170);
 
   var h='';
-  for(var d=1;d<=maxD;d+=2) h+='<div class="band" style="left:'+(xOf(d)-GAP/2)+'px;width:'+(CW+GAP)+'px"></div>';
+  for(var d=1;d<=maxD;d+=2) h+='<div class="band" style="left:'+(xOf(d)-GAP/2-(XEX[d]||0))+'px;width:'+(CW+GAP+(XEX[d]||0))+'px"></div>';
 
   /* Stagger the connectors: every child gets its own vertical lane in the gap when its span overlaps
      another child's, and parents reached by several children (siblings) get separate entry points. */
   var inc=new Map();
   nodes.forEach(function(nd){nd.kids.forEach(function(k){var a=inc.get(k)||[];a.push(nd);inc.set(k,a)})});
+  /* Full brothers and sisters (same parents) count as one: they share one lane and one entry point. */
+  var famKey=function(nd){ var ks=nd.kids.filter(function(k){return !k.hap}); return ks.length>1?ks.map(function(k){return k.n}).sort(function(a,b){return a-b}).join(','):'n'+nd.n };
   var entry=function(nd,k){
     var a=inc.get(k); if(!a||a.length<2) return 0;
-    a=a.slice().sort(function(u,v){return u.y-v.y});
-    return (a.indexOf(nd)-(a.length-1)/2)*6;
+    var keys=[], ys={};
+    a.forEach(function(u){ var q=famKey(u); if(keys.indexOf(q)<0){ keys.push(q); ys[q]=[] } ys[q].push(u.y) });
+    if(keys.length<2) return 0;
+    var mean=function(q){ return ys[q].reduce(function(s,v){return s+v},0)/ys[q].length };
+    keys.sort(function(x,y){return mean(x)-mean(y)});
+    return (keys.indexOf(famKey(nd))-(keys.length-1)/2)*6;
   };
   var rowY=function(y){return TOP+y*SLOT+SLOT/2};
   /* where a connector leaves the gap next to the child: the parent's row, or for a line that skips generations, its corridor */
@@ -230,7 +262,7 @@ function render(keep){
        instead of crossing each other. */
     var fam=new Map(), items=[];
     list.forEach(function(nd){
-      var key=nd.kids.length>1?nd.kids.map(function(k){return k.n}).sort(function(a,b){return a-b}).join(','):null;
+      var key=famKey(nd); if(key.charAt(0)==='n') key=null;
       var it=key&&fam.get(key);
       if(!it){ it={members:[],lo:Infinity,hi:-Infinity,ky:[],cys:[]}; items.push(it); if(key) fam.set(key,it) }
       it.members.push(nd); it.lo=Math.min(it.lo,nd.lo); it.hi=Math.max(it.hi,nd.hi);
@@ -257,22 +289,29 @@ function render(keep){
       else{ var nl=[nd]; lanes.splice(best.pos,0,nl); nd._l=nl }
     });
     items.forEach(function(it){ var ln=lanes.indexOf(it._l); it.members.forEach(function(m){ m.lane=ln }) });
+    /* Forks that run side by side in this gap get slightly different shades of their colour, so each child's line
+       to its parents can be followed. A fork on its own keeps the plain colour. */
+    items.forEach(function(it){
+      var crowded=items.some(function(o){ return o!==it&&o._l!==it._l&&near(o,it) });
+      it.members.forEach(function(m){ m.shade=crowded?m.lane%4:0 });
+    });
     var step=lanes.length>1?Math.min(8,(GAP-20)/(lanes.length-1)):0;
     list.forEach(function(nd){nd.trunk=10+nd.lane*step});
   });
   var paths='', hot='';
   nodes.forEach(function(nd){
     nd.kids.forEach(function(k){
-      var x1=xOf(nd.d)+CW, y1=cy(nd), x2=xOf(k.d), y2=cy(k)+entry(nd,k), xm=x1+nd.trunk;
+      var x1=xOf(nd.d)+CW, y1=cy(nd), x2=xOf(k.d), y2=cy(k)+entry(nd,k), xm=x1+(XEX[nd.d+1]||0)+nd.trunk;
       var on=czEdges.has(nd.n+'>'+k.n);
       var dd='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+x2;
       if(k.d>nd.d+1){
         /* across the columns in between, then into the fork of the parent's nearer child, sharing its last stretch */
         var o=k.owner&&k.owner.trunk!=null&&k.owner.d===k.d-1?k.owner:null;
-        var xb=o?xOf(o.d)+CW+o.trunk:x2-GAP+5, yb=o?cy(k)+entry(o,k):y2;
+        var xb=o?xOf(o.d)+CW+(XEX[o.d+1]||0)+o.trunk:x2-GAP+5, yb=o?cy(k)+entry(o,k):y2;
         dd='M'+x1+' '+y1+'H'+xm+'V'+rowY(corridor(nd,k))+'H'+xb+'V'+yb+'H'+x2;
       }
-      var seg='<path'+(on?' class="cz"':(k.cls?' class="'+k.cls+'"':''))+' style="--lc:'+(k.color||lc(k.n))+'" d="'+dd+'"/>';
+      var shOf=(k.d>nd.d+1&&k.owner&&k.owner.trunk!=null&&k.owner.d===k.d-1)?k.owner:nd, pc=on?'cz':k.cls||(shOf.shade?'sh'+shOf.shade:'');
+      var seg='<path'+(pc?' class="'+pc+'"':'')+' style="--lc:'+(k.color||lc(k.n))+'" d="'+dd+'"/>';
       if(on) hot+=seg; else paths+=seg;
     });
   });
@@ -314,6 +353,8 @@ function render(keep){
   world.innerHTML=h;
   /* the DNA key is shown only when a card on the chart carries the DNA badge */
   var lgd=document.getElementById('lg-dna'); if(lgd) lgd.hidden=!world.querySelector('.card .cdna');
+  /* the one-card option is offered only when this view has (or, with it on, would have) repeat cards */
+  var ocr=document.getElementById('onecardrow'); if(ocr) ocr.hidden=!REPOPT;
   world.style.width=ww+'px'; world.style.height=wh+'px';
   rootCy=cy(rn);
   var realCols=new Set(nodes.filter(function(x){return !x.hap}).map(function(x){return x.d}));

@@ -17,7 +17,7 @@ function chartSVG(){
   o+='<g transform="translate(0,'+HEAD+')">';
   world.querySelectorAll('.band').forEach(function(b){ o+='<rect x="'+parseFloat(b.style.left)+'" y="0" width="'+parseFloat(b.style.width)+'" height="'+wh+'" fill="'+band+'"/>' });
   world.querySelectorAll('svg.lines path').forEach(function(pth){
-    var c=getComputedStyle(pth), st=c.stroke&&c.stroke!=='none'?c.stroke:rule, da=c.strokeDasharray&&c.strokeDasharray!=='none'?c.strokeDasharray:'';
+    var c=getComputedStyle(pth), st=c.stroke&&c.stroke!=='none'?plainColor(c.stroke):rule, da=c.strokeDasharray&&c.strokeDasharray!=='none'?c.strokeDasharray:'';
     o+='<path d="'+pth.getAttribute('d')+'" fill="none" stroke="'+st+'" stroke-width="'+(pth.classList.contains('cz')?2.5:1.5)+'"'+(da?' stroke-dasharray="'+da+'"':'')+'/>';
   });
   var clip=0;
@@ -55,6 +55,13 @@ function svgToPng(sv){
     img.onerror=function(){ URL.revokeObjectURL(url); rej(new Error('img')) };
     img.src=url;
   });
+}
+/* Modern colour syntax (oklch, color(srgb …)) as plain rgb(), read back from a 1-pixel canvas, so saved SVG files open in any program. */
+var PCOL={};
+function plainColor(c){
+  if(/^(#|rgb)/i.test(c)) return c; if(PCOL[c]) return PCOL[c];
+  try{ var cv=document.createElement('canvas'); cv.width=cv.height=1; var g=cv.getContext('2d'); g.fillStyle='#000'; g.fillStyle=c; g.fillRect(0,0,1,1);
+    var d=g.getImageData(0,0,1,1).data; return PCOL[c]='rgb('+d[0]+','+d[1]+','+d[2]+')' }catch(_){ return c }
 }
 function savePicture(kind){
   closeMenus();

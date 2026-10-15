@@ -102,7 +102,7 @@ Already have a tree in another program? Export it from there as a **GEDCOM (.ged
 
 **What the marks mean**
 
-- **Coloured dots and lines** show which of the four grandparents each ancestor descends from. The legend above the chart names the lines. The colours follow whoever is at the root of the current view.
+- **Coloured dots and lines** show which of the four grandparents each ancestor descends from. The legend above the chart names the lines. The colours follow whoever is at the root of the current view. Where several lines run side by side in the same gap, they are drawn in slightly different shades of their colour (the hue turned a little, lighter or darker) so you can follow each child's line to its parents.
 - **Teal DNA badge:** this person is confirmed by a DNA test or match. Hover over it to see how. The *DNA confirmed* key in the legend appears only when a card on the chart has this badge.
 - **Rounded Y and mt nodes** after the last known person of a direct father line or mother line show that line's haplogroup. Click one to open its page on FamilyTreeDNA.
 - **A line that skips a column** leads to an ancestor who is drawn further back because they are also an ancestor by a longer route (see [pedigree collapse](#example-pedigree-collapse-in-a-royal-family)).
@@ -155,11 +155,11 @@ In edit mode, a dashed **Add father** or **Add mother** card sits wherever a par
 
 Sometimes the person you want to add is **already in the tree**, for example when two of your ancestors were cousins and share grandparents. At the top of the Add form, under **Already in the tree?**, type part of their name, a place or a year, and choose them from the list. The button changes to **Link as father** (or mother).
 
-- They are **drawn once**, with a line to each child. If they belong in the same generation on both routes, the lines are ordinary ones.
+- They are **drawn once**, with a line to each child. If they belong in the same generation on both routes, the lines are ordinary ones. Lines from full brothers and sisters to their parents always share one vertical line and meet the parents at the same point.
 - If the routes have **different lengths**, the person is drawn in the **further generation**, and the line from the nearer child skips the columns in between, running through the gaps between cards. Each skipping line picks the gap where it crosses the fewest other lines, and lines to the same parents join where they can. Where there is room, the person (and everyone behind them) is moved toward the middle of all their children.
 - Only if that line would cross **3 or more other lines** does the chart draw the person in the nearer generation instead and put a dashed **repeat card** in each further place. Repeat cards are therefore always in the higher generation. Click one to go to the full card.
 
-The chart makes this choice by itself each time it is drawn, so there is nothing to set.
+The chart makes this choice by itself each time it is drawn. If you would rather never see repeat cards, tick **View → Draw linked ancestors once** (the option appears only when the current view has repeat cards): the ancestor stays in the further generation, and the long line joins its brother's or sister's line next to the parents.
 
 To undo a link later, open the child's form and tick **Unlink** under *Chart layout*.
 
@@ -283,6 +283,7 @@ Open **View** in the toolbar:
 - **Show birth years of living people:** off by default, so living people show only *Living*. Turn it on to show their birth year.
 - **Show photos on cards.**
 - **Names on the chart:** birth names, or married names for anyone who has one.
+- **Draw linked ancestors once, with long lines instead of repeat cards:** shown only when the current view has dashed repeat cards. When ticked, every linked ancestor is drawn once, in the further generation, and the long line from the nearer child runs straight out from that child, then joins the line of its brother or sister next to the parents. Lines cross more, but nobody appears twice.
 - **Save as read-only web page (HTML):** saves the whole app and your tree as one .html file, opening at the generations and person you are viewing. Anyone can open it in a browser, with no install, and look around (zoom, details, famous relatives, Explore), but there is no Edit button and nothing they do is saved. It does not touch the tree saved in their own browser. This works in the single-file version (`pedigree-builder.html` from Releases) and when the page is served from a web server such as GitHub Pages; the split-file version opened by double-clicking `index.html` cannot read its own files, so it explains this instead.
 - **Save chart as picture (PNG)** or **(SVG):** saves the chart as currently shown (generations, famous-relative lines and all) to your downloads. Very large charts are too big for PNG; use SVG or lower the generations.
 
@@ -457,7 +458,7 @@ Top-level fields:
 | `haplo` | Haplogroups: `type` (`y` or `mt`), `from` (person number), `code`, optional `url`, `line` and `to` (the last person the line reaches). |
 | `dna` | DNA confirmations: `type` (`self`, `yt`, `mtt`, `match`, `y` or `mt`), `anchor` (person number) and `src`. |
 | `photos` | Photos as small JPEG data URLs, keyed by person number. |
-| `showLiving`, `nameView`, `hidePhotos` | View settings. |
+| `showLiving`, `nameView`, `hidePhotos`, `oneCard` | View settings. |
 | `sample` | `true` for the built-in sample tree. |
 
 Person fields (only the ones that are filled in are written):
