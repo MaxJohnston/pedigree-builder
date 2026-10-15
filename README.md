@@ -73,7 +73,7 @@ Already have a tree in another program? Export it from there as a **GEDCOM (.ged
 - **Pedigree collapse:** when the same person is your ancestor more than once (for example when cousins married), link them instead of entering them twice.
 - **Famous relatives:** record notable cousins and famous ancestors, and draw the line of descent to them on the chart.
 - **DNA:** record autosomal, Y-DNA and mtDNA tests and DNA matches. Confirmed people get a DNA badge. Y-DNA and mtDNA haplogroups appear at the end of each direct father or mother line.
-- **Find a person:** search by name, place or year and jump to them.
+- **Find a person:** search by name, place or year and jump to them, including famous relatives.
 - **Relationship calculator** for any two people in the tree.
 - **Tree report:** completeness by generation and a list of brick walls (ancestors whose parents are not yet recorded).
 - **Places and migration:** birthplaces by generation and moves from parent to child.
@@ -272,7 +272,7 @@ Open **Explore** in the toolbar.
 - **Places and migration:** moves from parent to child, moves within a lifetime (born in one place, died in another), and birthplaces by generation. Group places by **country**, **state or region**, or **town**. Places are grouped by how they are written, so write them consistently.
 - **Timeline:** a bar for each person in the current chart view, coloured by grandparent line and set against historical events. Faded bars have uncertain or missing dates. Raise **Generations** to include more people. Living people are hidden unless their birth years are shown (see View options).
 
-**Find a person:** type in the **Find a person** box at the left of the toolbar. Matching names, places and years appear as you type. Choose one to jump to them; the chart adds generations or switches back to the root's tree if needed.
+**Find a person:** type in the **Find a person** box at the left of the toolbar. Matching names, places and years appear as you type. Choose one to jump to them; the chart adds generations or switches back to the root's tree if needed. Famous relatives are listed too (marked *Famous relative*): choosing one turns on **★ Famous relatives** and draws their line of descent on the chart.
 
 ---
 

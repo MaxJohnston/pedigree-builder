@@ -19,6 +19,8 @@ function searchCands(list,qs){
   if(toks.length) out.sort(function(a,b){ var A=fold(a.name).indexOf(toks[0])===0?0:1, B=fold(b.name).indexOf(toks[0])===0?0:1; return A-B });
   return out.slice(0,40);
 }
+/* An option's value: a person's number, or text such as "f:Name" for a famous relative. */
+function optVal(li){ var v=li.getAttribute('data-n'); return /^-?\d+$/.test(v)?+v:v }
 /* A search box with a list of matches: arrows move, Enter picks, Escape closes the list. */
 function makeCombo(inp,ul,cands,onPick){
   var hi=-1;
@@ -29,7 +31,7 @@ function makeCombo(inp,ul,cands,onPick){
   }
   function draw(){
     var res=searchCands(cands(),inp.value); hi=res.length?0:-1;
-    ul.innerHTML=res.length?res.map(function(c){return '<li role="option" id="'+ul.id+'-'+c.n+'" data-n="'+c.n+'"><b>'+hiText(c.name,inp.value)+'</b><span>'+hiText(c.meta,inp.value)+'</span></li>'}).join('')
+    ul.innerHTML=res.length?res.map(function(c,i){return '<li role="option" id="'+ul.id+'-'+i+'" data-n="'+esc(String(c.n))+'"><b>'+hiText(c.name,inp.value)+'</b><span>'+hiText(c.meta,inp.value)+'</span></li>'}).join('')
       :'<li class="none" role="presentation">No one matches “'+esc(inp.value)+'”.</li>';
     ul.hidden=false; inp.setAttribute('aria-expanded','true'); setAD();
   }
@@ -41,11 +43,11 @@ function makeCombo(inp,ul,cands,onPick){
     var open=!ul.hidden, items=ul.querySelectorAll('[role="option"]');
     if(e.key==='ArrowDown'){ e.preventDefault(); if(!open){ if(inp.value.trim()) draw() } else if(items.length){ hi=(hi+1)%items.length; setAD() } }
     else if(e.key==='ArrowUp'){ e.preventDefault(); if(open&&items.length){ hi=(hi-1+items.length)%items.length; setAD() } }
-    else if(e.key==='Enter'){ if(open&&hi>=0&&items[hi]){ e.preventDefault(); pick(+items[hi].getAttribute('data-n')) } }
+    else if(e.key==='Enter'){ if(open&&hi>=0&&items[hi]){ e.preventDefault(); pick(optVal(items[hi])) } }
     else if(e.key==='Escape'&&open){ e.preventDefault(); e.stopPropagation(); hide() }
   });
   ul.addEventListener('mousedown',function(e){ e.preventDefault() });
-  ul.addEventListener('click',function(e){ var li=e.target.closest('[role="option"]'); if(li) pick(+li.getAttribute('data-n')) });
+  ul.addEventListener('click',function(e){ var li=e.target.closest('[role="option"]'); if(li) pick(optVal(li)) });
   return {hide:hide};
 }
 /* Find: show the person on the chart, switching to the root's tree and adding generations when needed. */
@@ -63,7 +65,37 @@ function findPerson(n){
   flash(n);
   var c=cardEl(n); if(c){ var b=c.querySelector('[data-act="details"]'); if(b) try{b.focus({preventScroll:true})}catch(_){} }
 }
-makeCombo($('#find'),$('#findlist'),personCands,function(n){ $('#find').value=''; findPerson(n) });
+/* Famous relatives who are not ancestors are listed in Find too. Picking one turns on Famous relatives, adds
+   generations or switches back to the root's tree if needed, and draws their line of descent. */
+function famCands(){
+  return FAMOUS.filter(function(f){return !f.ancestor}).map(function(f){
+    var yrs=f.b&&f.d?f.b+'–'+f.d:f.b?'b. '+f.b:f.d?'d. '+f.d:'';
+    var meta=[f.title,yrs,'Famous relative'].filter(Boolean).join(' · ');
+    return {n:'f:'+f.name, name:f.name, meta:meta, hay:fold(f.name+' '+meta)};
+  });
+}
+function findCands(){ return personCands().concat(famCands()) }
+function findFamous(name){
+  var f=FAMOUS.filter(function(x){return x.name===name})[0]; if(!f) return;
+  closeSheet(); closeMenus();
+  if(!czOn){ czOn=true; try{localStorage.setItem('pedigree-builder-cz','1')}catch(_){} }
+  czFocus=false;
+  if(!famRels(f).length&&view!==1){ view=1; try{history.replaceState(null,'','#p1')}catch(_){} render(true) }
+  var rels=famRels(f).filter(function(r){return r.g-r.v.k>=0});
+  if(rels.length){ var need=Math.min.apply(null,rels.map(function(r){return r.g}))+1; if(depth<need){ depth=Math.min(need,MAXGEN); sel.value=depth } }
+  czSel.clear(); czSel.set(f.name,0);
+  render(true);
+  /* an ancestor reached by routes of different lengths is drawn in the further generation: add generations until the line fits */
+  while(!routesOf(f).length&&rels.length&&depth<MAXGEN){ depth++; sel.value=depth; render(true) }
+  var cards=[], guest=null;
+  GUEST.forEach(function(nd){ if(nd.famous===f){ var c=cardEl(nd.n); if(c){ cards.push(c); guest=guest||c } } });
+  var r=routesOf(f)[0]; if(r) cards.push(cardEl(r.v.anc));
+  centerOn(cards);
+  try{stage.scrollIntoView({block:'nearest'})}catch(_){}
+  if(guest){ guest.classList.add('refhl'); setTimeout(function(){ guest.classList.remove('refhl') },2400) }
+  else toast(f.name+' is too far back to draw from this tree. Raise Generations to see the line.');
+}
+makeCombo($('#find'),$('#findlist'),findCands,function(n){ $('#find').value=''; if(typeof n==='string'&&n.indexOf('f:')===0) findFamous(n.slice(2)); else findPerson(n) });
 
 /* ---------- Explore ---------- */
 $('#exploremenu').addEventListener('click',function(e){
