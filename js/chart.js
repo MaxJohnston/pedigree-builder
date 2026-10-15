@@ -241,10 +241,20 @@ function render(keep){
   /* A line that skips generations joins the fork of the parent's nearer child for its last stretch, coming in from the
      left at its corridor row. Count that row as part of that fork, so neighbouring forks get their own lanes beside it. */
   nodes.forEach(function(nd){ nd.extra=[] });
+  /* It joins only the fork of a full brother or sister (same two parents). A half-sibling's fork also leads to another
+     parent, so then the line gets a fork of its own in the gap before the parents ("solo"), placed like any other fork. */
+  /* the full brother or sister drawn in the generation next to these parents, whose fork the line can join */
+  var joins=function(nd,k){ return (inc.get(k)||[]).filter(function(u){ return u!==nd&&!u.solo&&u.d===k.d-1&&famKey(u)===famKey(nd) })[0]||null };
+  var SOLO=new Map();
   nodes.forEach(function(nd){ nd.kids.forEach(function(k){
-    if(k.d>nd.d+1&&k.owner&&k.owner.d===k.d-1&&k.owner.kids.indexOf(k)>=0) k.owner.extra.push(rowY(corridor(nd,k)));
+    if(k.d<=nd.d+1) return;
+    var sib=joins(nd,k); if(sib){ if(sib.extra.indexOf(rowY(corridor(nd,k)))<0) sib.extra.push(rowY(corridor(nd,k))) }
+    else{ var key=nd.n+'>'+k.d, so=SOLO.get(key);
+      if(!so){ so={n:'s'+key, d:k.d-1, y:corridor(nd,k), kids:[], extra:[], solo:true}; SOLO.set(key,so) }
+      so.kids.push(k); nd.soloOf=nd.soloOf||{}; nd.soloOf[k.n]=so; }
   }) });
   nodes.forEach(function(nd){ if(nd.kids.length) (byDepth[nd.d]=byDepth[nd.d]||[]).push(nd); });
+  SOLO.forEach(function(so){ (byDepth[so.d]=byDepth[so.d]||[]).push(so) });
   Object.keys(byDepth).forEach(function(dk){
     var list=byDepth[dk];
     list.forEach(function(nd){
@@ -306,11 +316,11 @@ function render(keep){
       var dd='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+x2;
       if(k.d>nd.d+1){
         /* across the columns in between, then into the fork of the parent's nearer child, sharing its last stretch */
-        var o=k.owner&&k.owner.trunk!=null&&k.owner.d===k.d-1?k.owner:null;
-        var xb=o?xOf(o.d)+CW+(XEX[o.d+1]||0)+o.trunk:x2-GAP+5, yb=o?cy(k)+entry(o,k):y2;
+        var so=nd.soloOf&&nd.soloOf[k.n], sb=joins(nd,k), o=so||(sb&&sb.trunk!=null?sb:null);
+        var xb=o?xOf(o.d)+CW+(XEX[o.d+1]||0)+o.trunk:x2-GAP+5, yb=o?cy(k)+entry(so?nd:o,k):y2;
         dd='M'+x1+' '+y1+'H'+xm+'V'+rowY(corridor(nd,k))+'H'+xb+'V'+yb+'H'+x2;
       }
-      var shOf=(k.d>nd.d+1&&k.owner&&k.owner.trunk!=null&&k.owner.d===k.d-1)?k.owner:nd, pc=on?'cz':k.cls||(shOf.shade?'sh'+shOf.shade:'');
+      var shOf=k.d>nd.d+1?((nd.soloOf&&nd.soloOf[k.n])||joins(nd,k)||nd):nd, pc=on?'cz':k.cls||(shOf.shade?'sh'+shOf.shade:'');
       var seg='<path'+(pc?' class="'+pc+'"':'')+' style="--lc:'+(k.color||lc(k.n))+'" d="'+dd+'"/>';
       if(on) hot+=seg; else paths+=seg;
     });
