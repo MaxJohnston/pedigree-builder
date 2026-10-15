@@ -62,6 +62,11 @@ function render(keep){
       if(g.length<2) return;
       var own=g.filter(function(m){return m.kids.some(function(k){return k.owner===m})})[0]||g[0];
       own.grp=g; g.forEach(function(m){ if(m!==own) m.ghost=true });
+      /* the brothers and sisters drawn with it share its repeat cards too (their own copies would never be placed) */
+      var drop=new Set();
+      g.forEach(function(m){ if(m===own) return; m.kids=m.kids.map(function(k){
+        if(!k.rep) return k; var r=own.kids.filter(function(x){return x.rep&&x.n===k.n})[0]; if(r){ drop.add(k); return r } return k }) });
+      if(drop.size) nodes=nodes.filter(function(x){return !drop.has(x)});
     });
   }
   /* Pack the tree: each branch is laid out on its own, then the next branch is slid up as far as it can go
@@ -106,26 +111,63 @@ function render(keep){
   }
   /* Connectors a generation-skipping line from u to v would cross if it ran across the columns in between at row yc
      and then joined the fork of v's nearer child (its owner) next to v. */
+  /* Large trees: the lines and cards of each column are kept in sorted lists, so counting crossings and finding free
+     rows takes a few look-ups instead of a pass over the whole chart. Rebuilt whenever the cards have moved (IDX=null). */
+  var IDX=null;
+  var below=function(a,x){ var lo=0,hi=a.length; while(lo<hi){ var m=(lo+hi)>>1; if(a[m]<x) lo=m+1; else hi=m } return lo };   /* how many < x */
+  var atMost=function(a,x){ var lo=0,hi=a.length; while(lo<hi){ var m=(lo+hi)>>1; if(a[m]<=x) lo=m+1; else hi=m } return lo };  /* how many <= x */
+  var num=function(a,b){return a-b};
+  function idx(){
+    if(IDX) return IDX;
+    var X={}, col=function(g){ return X[g]||(X[g]={lo:[],hi:[],by:[],ay:[],ys:[]}) };
+    nodes.forEach(function(a){
+      if(!isFinite(a.y)) return;
+      col(a.d).ys.push(a.y);
+      a.kids.forEach(function(b){
+        if(b.d!==a.d+1||b.add||!isFinite(b.y)) return;
+        var C=col(a.d), l=Math.min(a.y,b.y), h=Math.max(a.y,b.y);
+        C.by.push(b.y); C.ay.push(a.y);
+        if(h-l>=0.02){ C.lo.push(l); C.hi.push(h) }   /* a line too short to contain any row cannot be crossed */
+      });
+    });
+    Object.keys(X).forEach(function(g){ var C=X[g]; ['lo','hi','by','ay','ys'].forEach(function(k){ C[k].sort(num) }) });
+    return (IDX=X);
+  }
+  /* lines in column g whose vertical stretch passes row t */
+  var spanAt=function(C,t){ return C?below(C.lo,t-0.01)-atMost(C.hi,t+0.01):0 };
+  /* values strictly between p and q, with the same small margin */
+  var inside=function(a,p,q){ var l=Math.min(p,q)+0.01, h=Math.max(p,q)-0.01; return h>l?below(a,h)-atMost(a,l):0 };
   function crossAt(u,v,yc,ty){
-    var c=0, o=v.owner, inn=function(t,a,b){ return t>Math.min(a,b)+0.01&&t<Math.max(a,b)-0.01 };
+    var X=idx(), c=0, o=v.owner, inn=function(t,a,b){ return t>Math.min(a,b)+0.01&&t<Math.max(a,b)-0.01 };
     var lo=o?Math.min(o.y,ty-0.5):ty, hi=o?Math.max(o.y,ty+0.5):ty, tp=yc<lo?lo:yc>hi?hi:yc;
-    nodes.forEach(function(a){ a.kids.forEach(function(b){
-      if(b.d!==a.d+1||a===u||b.add) return;
-      var g=a.d;
-      if(g===u.d){ if(inn(b.y,u.y,yc)) c++; if(inn(u.y,a.y,b.y)) c++; }
-      else if(g>u.d&&g<v.d-1){ if(inn(yc,a.y,b.y)) c++; }
-      else if(g===v.d-1&&a!==o){ if(inn(yc,a.y,b.y)) c++; if(inn(a.y,yc,tp)) c++; }
-    }) });
+    var own=function(a){ return a.kids.filter(function(b){return b.d===a.d+1&&!b.add}) };
+    var C=X[u.d];
+    if(C){ c+=inside(C.by,u.y,yc)+spanAt(C,u.y);
+      own(u).forEach(function(b){ if(inn(b.y,u.y,yc)) c--; if(inn(u.y,u.y,b.y)) c-- }) }
+    for(var g=u.d+1;g<v.d-1;g++) c+=spanAt(X[g],yc);
+    if(v.d-1>u.d){ C=X[v.d-1];
+      if(C){ c+=spanAt(C,yc)+inside(C.ay,yc,tp);
+        if(o&&o.d===v.d-1) own(o).forEach(function(b){ if(inn(yc,o.y,b.y)) c--; if(inn(o.y,yc,tp)) c-- }) } }
     return c;
+  }
+  /* no card in the columns between u and v within half a row of y */
+  function freeRow(u,v,y){
+    var X=idx();
+    for(var g=u.d+1;g<v.d;g++){ var C=X[g]; if(C&&below(C.ys,y+0.5-1e-9)-atMost(C.ys,y-0.5+1e-9)>0) return false }
+    return true;
+  }
+  function midRows(u,v){
+    var X=idx(), out=[], seen=new Set();
+    for(var g=u.d+1;g<v.d;g++){ var C=X[g]; if(C) C.ys.forEach(function(y){ out.push(y) }) }
+    return out;
   }
   /* The row a generation-skipping line runs along between the cards of the columns it passes: of the free rows,
      the one where it crosses the fewest other lines, then the nearest to the parents. */
   function routeOf(u,v){
-    var ty=longTarget(u,v), mids=nodes.filter(function(x){return x.d>u.d&&x.d<v.d});
-    var free=function(y){ return mids.every(function(x){return Math.abs(x.y-y)>=0.5-1e-9}) };
-    var cands=[ty,u.y]; mids.forEach(function(x){ cands.push(x.y-0.5,x.y+0.5) });
+    var ty=longTarget(u,v), seen=new Set();
+    var cands=[ty,u.y]; midRows(u,v).forEach(function(y){ cands.push(y-0.5,y+0.5) });
     var best=null;
-    cands.forEach(function(y){ if(!free(y)) return; var c=crossAt(u,v,y,ty), sc=c*1000+Math.abs(y-ty)+0.3*Math.abs(y-u.y); if(!best||sc<best.s) best={y:y,s:sc,c:c} });
+    cands.forEach(function(y){ if(seen.has(y)) return; seen.add(y); if(!freeRow(u,v,y)) return; var c=crossAt(u,v,y,ty), sc=c*1000+Math.abs(y-ty)+0.3*Math.abs(y-u.y); if(!best||sc<best.s) best={y:y,s:sc,c:c} });
     return best||{y:ty,c:crossAt(u,v,ty,ty)};
   }
   /* One route for a child's lines to both parents: worked out once, for the first parent drawn in that generation. */
@@ -135,21 +177,19 @@ function render(keep){
   function corridor(u,v){
     var v0=u.kids.filter(function(k){return k.d===v.d})[0]||v;
     var fk=typeof famKey==='function'?famKey(u):'n'+u.n, key=fk+'@'+u.d+'>'+v0.n;
-    if(fk.charAt(0)!=='n'&&CORR.has(key)) return CORR.get(key);
+    if(CORR.has(key)) return CORR.get(key);
     var sibs=fk.charAt(0)==='n'?[u]:nodes.filter(function(x){return x.d===u.d&&!x.rep&&!x.solo&&x.kids.indexOf(v0)>=0&&famKey(x)===fk});
     if(!sibs.length) sibs=[u];
     var ty=longTarget(u,v0), rep=sibs.reduce(function(a,b){return Math.abs(b.y-ty)<Math.abs(a.y-ty)?b:a});
     var y=(WIDEN.has(v0.n)||WIDEN.has(v.n))?nearRow(rep,v0):routeOf(rep,v0).y;
-    if(fk.charAt(0)!=='n') CORR.set(key,y);
+    CORR.set(key,y);
     return y;
   }
   /* For a line drawn instead of repeat cards: the free row nearest the child, so the line leaves the child level and
      climbs in its own lane in the widened gap before the parents' generation. */
   function nearRow(u,v){
-    var mids=nodes.filter(function(x){return x.d>u.d&&x.d<v.d});
-    var free=function(y){ return mids.every(function(x){return Math.abs(x.y-y)>=0.5-1e-9}) };
-    var cands=[u.y]; mids.forEach(function(x){ cands.push(x.y-0.5,x.y+0.5) });
-    var best=null; cands.forEach(function(y){ if(free(y)&&(best==null||Math.abs(y-u.y)<Math.abs(best-u.y))) best=y });
+    var cands=[u.y]; midRows(u,v).forEach(function(y){ cands.push(y-0.5,y+0.5) });
+    var best=null; cands.forEach(function(y){ if(freeRow(u,v,y)&&(best==null||Math.abs(y-u.y)<Math.abs(best-u.y))) best=y });
     return best==null?u.y:best;
   }
   /* 3 or more crossings counts as several. */
@@ -183,7 +223,7 @@ function render(keep){
   }
   /* Repeat cards are decided without edit mode's "Add father/mother" cards, so entering edit mode never changes them. */
   for(var pass=0;pass<8;pass++){
-    build(false); group(); lay(rn); settle(rn,0); centerCross();
+    build(false); group(); lay(rn); settle(rn,0); centerCross(); IDX=null;
     var top=Infinity; nodes.forEach(function(x){ if(x.y<top) top=x.y });
     nodes.forEach(function(x){ x.y-=top });
     var bad=[];
@@ -220,6 +260,7 @@ function render(keep){
     uy.sort(function(a,b){return a-b});
     nodes.forEach(function(x){ x.y=uy.findIndex(function(v){return Math.abs(v-x.y)<=1e-6}) });
   }
+  IDX=null; CORR.clear();
   var maxY=0; nodes.forEach(function(x){if(x.y>maxY)maxY=x.y});
   var maxD=0; nodes.forEach(function(x){if(x.d>maxD)maxD=x.d});
   var topOf=function(nd){return TOP+nd.y*SLOT+(SLOT-CH)/2};

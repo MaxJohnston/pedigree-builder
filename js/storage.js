@@ -43,11 +43,18 @@ var UNDO=[], REDO=[], HIST=[], LAST=null, PREFKEYS=['showLiving','nameView','hid
 function prefsNow(){ var o={}; PREFKEYS.forEach(function(k){ if(STATE[k]!==undefined) o[k]=STATE[k] }); return o }
 function snapshot(){ var o={}; Object.keys(STATE).forEach(function(k){ if(k!=='photos'&&PREFKEYS.indexOf(k)<0) o[k]=STATE[k] }); return {s:JSON.stringify(o), ph:STATE.photos||{}} }
 function restoreSnap(sn){ var pr=prefsNow(); STATE=JSON.parse(sn.s); STATE.photos=sn.ph||{}; Object.assign(STATE,pr) }
+/* Very large trees (tens of megabytes of notes) would fill memory with copies, so the oldest steps are dropped
+   once the saved copies add up to about 60 MB. */
+function trimHistory(){
+  var cap=30e6, size=function(a){ var t=0, seen=new Set(); a.forEach(function(e){ if(e.before&&!seen.has(e.before)){ seen.add(e.before); t+=e.before.s.length } }); return t };
+  while(UNDO.length>1&&size(UNDO)>cap) UNDO.shift();
+  while(HIST.length>1&&size(HIST)>cap) HIST.shift();
+}
 function resetHistory(){ UNDO=[]; REDO=[]; HIST=[]; LAST=snapshot(); syncUndo() }
 function commit(replaced,isSample,desc){
   STATE.sample=!!isSample;
   store.touched=true;
-  if(LAST){ var e={desc:desc||'Changed the tree', at:Date.now(), before:LAST}; UNDO.push(e); if(UNDO.length>80) UNDO.shift(); REDO=[]; HIST.push(e); if(HIST.length>150) HIST.shift(); }
+  if(LAST){ var e={desc:desc||'Changed the tree', at:Date.now(), before:LAST}; UNDO.push(e); if(UNDO.length>80) UNDO.shift(); REDO=[]; HIST.push(e); if(HIST.length>150) HIST.shift(); trimHistory(); }
   LAST=snapshot();
   rebuild();
   if(!P.has(view)) view=1;
