@@ -260,6 +260,11 @@ function render(keep){
   }) });
   nodes.forEach(function(nd){ if(nd.kids.length) (byDepth[nd.d]=byDepth[nd.d]||[]).push(nd); });
   SOLO.forEach(function(so){ (byDepth[so.d]=byDepth[so.d]||[]).push(so) });
+  /* Colours: a line from a child to its parents is one unit, even when it runs through several gaps (a line that skips
+     generations shares the fork it joins next to the parents). Units that run side by side anywhere get different shades. */
+  var CROWD=[], UP=new Map();
+  var root=function(x){ while(UP.has(x)&&UP.get(x)!==x) x=UP.get(x); return x };
+  var unite=function(a,b){ var ra=root(a), rb=root(b); if(ra!==rb) UP.set(rb,ra) };
   Object.keys(byDepth).forEach(function(dk){
     var list=byDepth[dk];
     list.forEach(function(nd){
@@ -309,12 +314,21 @@ function render(keep){
     /* Forks that run side by side in this gap get slightly different shades of their colour, so each child's line
        to its parents can be followed. A fork on its own keeps the plain colour. */
     items.forEach(function(it){
-      var crowded=items.some(function(o){ return o!==it&&o._l!==it._l&&near(o,it) });
-      it.members.forEach(function(m){ m.shade=crowded?m.lane%4:0 });
+      it.members.forEach(function(m){ unite(it.members[0],m) });
+      items.forEach(function(o){ if(o!==it&&o._l!==it._l&&near(o,it)) CROWD.push([it.members[0],o.members[0]]) });
     });
     var step=lanes.length>1?Math.min(8,(GAP-20)/(lanes.length-1)):0;
     list.forEach(function(nd){nd.trunk=10+nd.lane*step});
   });
+  nodes.forEach(function(nd){ nd.kids.forEach(function(k){ if(k.d>nd.d+1){ var t=(nd.soloOf&&nd.soloOf[k.n])||joins(nd,k); if(t) unite(nd,t) } }) });
+  var NB=new Map(); CROWD.forEach(function(e){ var a=root(e[0]), b=root(e[1]); if(a===b) return;
+    (NB.get(a)||NB.set(a,new Set()).get(a)).add(b); (NB.get(b)||NB.set(b,new Set()).get(b)).add(a) });
+  var COL=new Map();
+  Array.from(NB.keys()).sort(function(a,b){ return NB.get(b).size-NB.get(a).size }).forEach(function(g){
+    var used=new Set(); NB.get(g).forEach(function(h){ if(COL.has(h)) used.add(COL.get(h)) });
+    var c=0; while(used.has(c)&&c<3) c++; COL.set(g,c);
+  });
+  var shadeOf=function(x){ return COL.get(root(x))||0 };
   var paths='', hot='';
   nodes.forEach(function(nd){
     nd.kids.forEach(function(k){
@@ -327,7 +341,7 @@ function render(keep){
         var xb=o?xOf(o.d)+CW+(XEX[o.d+1]||0)+o.trunk:x2-GAP+5, yb=o?cy(k)+entry(so?nd:o,k):y2;
         dd='M'+x1+' '+y1+'H'+xm+'V'+rowY(corridor(nd,k))+'H'+xb+'V'+yb+'H'+x2;
       }
-      var shOf=k.d>nd.d+1?((nd.soloOf&&nd.soloOf[k.n])||joins(nd,k)||nd):nd, pc=on?'cz':k.cls||(shOf.shade?'sh'+shOf.shade:'');
+      var sh=shadeOf(nd), pc=on?'cz':k.cls||(sh?'sh'+sh:'');
       var seg='<path'+(pc?' class="'+pc+'"':'')+' style="--lc:'+(k.color||lc(k.n))+'" d="'+dd+'"/>';
       if(on) hot+=seg; else paths+=seg;
     });

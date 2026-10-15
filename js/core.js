@@ -74,6 +74,10 @@ function rebuild(){
     ['b','bm','bdy','bq','b2','d','dm','ddy','dq','d2','l','bname'].forEach(function(k){ if(t[k]!=null) p[k]=t[k]; else delete p[k] });
   });
   DEEPEST=DATA.reduce(function(m,p){return Math.max(m,dep(p.n)+1)},1);
+  /* Linked ancestors can sit deeper than their number says: count the longest route too. */
+  var LONG=new Map(), longest=function(n,seen){ if(LONG.has(n)) return LONG.get(n); if(seen.has(n)) return 0; seen.add(n);
+    var b=0; [fa(n),mo(n)].forEach(function(m){ if(P.has(m)) b=Math.max(b,1+longest(m,seen)) }); seen.delete(n); LONG.set(n,b); return b };
+  if(P.has(1)) DEEPEST=Math.max(DEEPEST,longest(1,new Set())+1);
   MAXGEN=Math.max(10,DEEPEST+1);
   KIDS=new Map();
   DATA.forEach(function(p){[fa(p.n),mo(p.n)].forEach(function(a){

@@ -102,7 +102,7 @@ Already have a tree in another program? Export it from there as a **GEDCOM (.ged
 
 **What the marks mean**
 
-- **Coloured dots and lines** show which of the four grandparents each ancestor descends from. The legend above the chart names the lines. The colours follow whoever is at the root of the current view. Where several lines run side by side in the same gap, they are drawn in slightly different shades of their colour (the hue turned a little, lighter or darker) so you can follow each child's line to its parents.
+- **Coloured dots and lines** show which of the four grandparents each ancestor descends from. The legend above the chart names the lines. The colours follow whoever is at the root of the current view. Where several lines run side by side, they are drawn in slightly different shades of their colour (the hue turned a little, lighter or darker) so you can follow each child's line to its parents. A line keeps one shade all the way from the child to the parents, even when it skips generations.
 - **Teal DNA badge:** this person is confirmed by a DNA test or match. Hover over it to see how. The *DNA confirmed* key in the legend appears only when a card on the chart has this badge.
 - **Rounded Y and mt nodes** after the last known person of a direct father line or mother line show that line's haplogroup. Click one to open its page on FamilyTreeDNA.
 - **A line that skips a column** leads to an ancestor who is drawn further back because they are also an ancestor by a longer route (see [pedigree collapse](#example-pedigree-collapse-in-a-royal-family)).
