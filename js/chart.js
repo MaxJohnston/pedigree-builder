@@ -129,7 +129,20 @@ function render(keep){
     return best||{y:ty,c:crossAt(u,v,ty,ty)};
   }
   /* One route for a child's lines to both parents: worked out once, for the first parent drawn in that generation. */
-  function corridor(u,v){ var v0=u.kids.filter(function(k){return k.d===v.d})[0]||v; return (WIDEN.has(v0.n)||WIDEN.has(v.n))?nearRow(u,v0):routeOf(u,v0).y }
+  /* Full brothers and sisters in the same column share it too: one line leaves their fork, from the sibling nearest
+     the parents, so their lines do not run side by side. */
+  var CORR=new Map();
+  function corridor(u,v){
+    var v0=u.kids.filter(function(k){return k.d===v.d})[0]||v;
+    var fk=typeof famKey==='function'?famKey(u):'n'+u.n, key=fk+'@'+u.d+'>'+v0.n;
+    if(fk.charAt(0)!=='n'&&CORR.has(key)) return CORR.get(key);
+    var sibs=fk.charAt(0)==='n'?[u]:nodes.filter(function(x){return x.d===u.d&&!x.rep&&!x.solo&&x.kids.indexOf(v0)>=0&&famKey(x)===fk});
+    if(!sibs.length) sibs=[u];
+    var ty=longTarget(u,v0), rep=sibs.reduce(function(a,b){return Math.abs(b.y-ty)<Math.abs(a.y-ty)?b:a});
+    var y=(WIDEN.has(v0.n)||WIDEN.has(v.n))?nearRow(rep,v0):routeOf(rep,v0).y;
+    if(fk.charAt(0)!=='n') CORR.set(key,y);
+    return y;
+  }
   /* For a line drawn instead of repeat cards: the free row nearest the child, so the line leaves the child level and
      climbs in its own lane in the widened gap before the parents' generation. */
   function nearRow(u,v){
@@ -254,9 +267,10 @@ function render(keep){
   nodes.forEach(function(nd){ nd.kids.forEach(function(k){
     if(k.d<=nd.d+1) return;
     var sib=joins(nd,k); if(sib){ if(sib.extra.indexOf(rowY(corridor(nd,k)))<0) sib.extra.push(rowY(corridor(nd,k))) }
-    else{ var key=nd.n+'>'+k.d, so=SOLO.get(key);
+    else{ /* full brothers and sisters in one column share one such fork */
+      var fk0=famKey(nd), key=(fk0.charAt(0)==='n'?fk0:fk0+'@'+nd.d)+'>'+k.d, so=SOLO.get(key);
       if(!so){ so={n:'s'+key, d:k.d-1, y:corridor(nd,k), kids:[], extra:[], solo:true}; SOLO.set(key,so) }
-      so.kids.push(k); nd.soloOf=nd.soloOf||{}; nd.soloOf[k.n]=so; }
+      if(so.kids.indexOf(k)<0) so.kids.push(k); nd.soloOf=nd.soloOf||{}; nd.soloOf[k.n]=so; }
   }) });
   nodes.forEach(function(nd){ if(nd.kids.length) (byDepth[nd.d]=byDepth[nd.d]||[]).push(nd); });
   SOLO.forEach(function(so){ (byDepth[so.d]=byDepth[so.d]||[]).push(so) });
@@ -330,7 +344,15 @@ function render(keep){
   });
   var shadeOf=function(x){ return COL.get(root(x))||0 };
   var paths='', hot='';
+  /* The whole line from a child to both parents is drawn in one colour: the father's grandparent-line colour
+     (the mother's when no father is drawn), so the fork does not change colour where it splits. */
+  var forkCol=function(nd){
+    var ks=nd.kids.filter(function(k){return !k.add&&!k.hap&&k.n>0});
+    var f=ks.filter(function(k){return k.n===fa(nd.n)})[0]||ks.filter(function(k){return k.n%2===0})[0]||ks[0];
+    return f?lc(f.n):null;
+  };
   nodes.forEach(function(nd){
+    var fc=forkCol(nd);
     nd.kids.forEach(function(k){
       var x1=xOf(nd.d)+CW, y1=cy(nd), x2=xOf(k.d), y2=cy(k)+entry(nd,k), xm=x1+(XEX[nd.d+1]||0)+nd.trunk;
       var on=czEdges.has(nd.n+'>'+k.n);
@@ -342,7 +364,7 @@ function render(keep){
         dd='M'+x1+' '+y1+'H'+xm+'V'+rowY(corridor(nd,k))+'H'+xb+'V'+yb+'H'+x2;
       }
       var sh=shadeOf(nd), pc=on?'cz':k.cls||(sh?'sh'+sh:'');
-      var seg='<path'+(pc?' class="'+pc+'"':'')+' style="--lc:'+(k.color||lc(k.n))+'" d="'+dd+'"/>';
+      var seg='<path'+(pc?' class="'+pc+'"':'')+' style="--lc:'+(k.color||(k.add||k.hap?null:fc)||lc(k.n))+'" d="'+dd+'"/>';
       if(on) hot+=seg; else paths+=seg;
     });
   });
