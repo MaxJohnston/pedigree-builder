@@ -225,7 +225,7 @@ Click a relative in the panel to draw their line of descent on the chart. If you
 
 **Adding a famous relative:** in edit mode, click **Famous relatives → + Add famous relative**, then:
 
-1. Enter their name, what they are known for, their sex (used for words such as *aunt*, *niece* and *sister*), their birth and death years, and optionally a link (a Wikipedia article or any web page). Each famous relative needs a different name; add something like *(son of Rhaegar)* to tell two people with the same name apart.
+1. Enter their name, what they are known for, their sex (used for words such as *aunt*, *niece* and *sister*), their birth and death years (an uncertain year can be typed as *c. 1850*, *bef. 1700*, *aft. 1820* or a range such as *1820/1825*), and optionally a link (a Wikipedia article or any web page). Each famous relative needs a different name; add something like *(son of Rhaegar)* to tell two people with the same name apart.
 2. Under **How you are related**, choose the **shared ancestor** from your tree.
 3. In **Line of descent**, list the generations from that ancestor's child down to the famous person's **parent**, one per line, as *name, born, died*. For example, for a relative who is a grandchild of the shared ancestor:
    ```
@@ -327,7 +327,7 @@ Importing **replaces your current tree**. You are asked to confirm first, and yo
 - **Start a blank tree…** replaces everything with a single person.
 - **Load the sample tree…** brings back the Whitaker sample.
 - **Load the royal sample tree…** loads the ancestry of King Edward VII, which shows pedigree collapse and parent order (see [the royal example](#example-pedigree-collapse-in-a-royal-family)).
-- **Load the Targaryen sample tree…** loads the fictional ancestry of Jon Snow from *A Song of Ice and Fire*, twenty generations deep. Generations of marriages between relatives (brother and sister, uncle and niece, cousins) make many ancestors appear more than once, so it is a good test of lines that skip columns. Rickard Stark is set to *Show mother above father*, which keeps the Stark lines from crossing. The eleven kings of the Seven Kingdoms among Jon's ancestors (Aegon I to Aerys II) and the contested queen Rhaenyra carry the ★ badge, and 84 aunts, uncles, cousins and half-siblings, from Daenerys and the Starks back to Visenya and Orys Baratheon, are recorded as famous relatives. Each person with a ★ or in the famous list links to their page on A Wiki of Ice and Fire.
+- **Load the Targaryen sample tree…** loads the fictional ancestry of Jon Snow from *A Song of Ice and Fire*, twenty generations deep. Generations of marriages between relatives (brother and sister, uncle and niece, cousins) make many ancestors appear more than once, so it is a good test of lines that skip columns. Rickard Stark is set to *Show mother above father*, which keeps the Stark lines from crossing. The eleven kings of the Seven Kingdoms among Jon's ancestors (Aegon I to Aerys II) and the contested queen Rhaenyra carry the ★ badge, and 84 aunts, uncles, cousins and half-siblings, from Daenerys and the Starks back to Visenya and Orys Baratheon, are recorded as famous relatives. Each person with a ★ or in the famous list links to their page on A Wiki of Ice and Fire. Birth and death years follow A Wiki of Ice and Fire, including its uncertain years (*230/250* for “between”, *bef.* and *aft.*) and years before Aegon's Conquest, shown as BC (Before the Conquest). Fourteen people have portraits.
 
 All of these can be undone.
 

@@ -69,7 +69,7 @@ function findPerson(n){
    generations or switches back to the root's tree if needed, and draws their line of descent. */
 function famCands(){
   return FAMOUS.filter(function(f){return !f.ancestor}).map(function(f){
-    var yrs=f.b&&f.d?yStr(f.b)+'–'+yStr(f.d):f.b?'b. '+yStr(f.b):f.d?'d. '+yStr(f.d):'';
+    var yrs=famYears(f);
     var meta=[f.title,yrs,'Famous relative'].filter(Boolean).join(' · ');
     return {n:'f:'+f.name, name:f.name, meta:meta, hay:fold(f.name+' '+meta)};
   });

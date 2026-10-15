@@ -116,7 +116,7 @@ function rebuild(){
   DATA.forEach(function(p){
     if(!p.star||p.ref!=null) return;
     var ns=[p.n]; DATA.forEach(function(q){ if(q.ref===p.n) ns.push(q.n) });
-    out.push({name:p.name, title:p.star, b:p.b, d:p.d, wiki:p.wiki, ancestor:true,
+    out.push({name:p.name, title:p.star, b:p.b, bq:p.bq, b2:p.b2, d:p.d, dq:p.dq, d2:p.d2, wiki:p.wiki, ancestor:true,
       via:ns.map(function(n){return {anc:n, path:[], k:0, male:p.n%2===0}})});
   });
   (STATE.famous||[]).forEach(function(f){
@@ -131,7 +131,7 @@ function rebuild(){
       return v;
     });
     if(!via.length) return;
-    out.push({name:f.name, title:f.title||'Famous relative', sex:f.sex, b:f.b, d:f.d, wiki:f.wiki, via:via});
+    out.push({name:f.name, title:f.title||'Famous relative', sex:f.sex, b:f.b, bq:f.bq, b2:f.b2, d:f.d, dq:f.dq, d2:f.d2, wiki:f.wiki, via:via});
   });
   FAMOUS=out;
   RATIO={root:null,w:null,c:null};
@@ -220,6 +220,12 @@ function fullDate(p,k){
   if(m&&d) parts.push(d); if(m) parts.push(MONTHS[m-1]); parts.push(yStr(y));
   return ({abt:'about ',bef:'before ',aft:'after '}[q]||'')+parts.join(' ');
 }
+/* Years of a famous relative for lists: "1743–1826", "b. c. 1850", "d. 209". */
+function famYears(f){
+  return f.b&&f.d?yText(f,'b')+'–'+yText(f,'d'):f.b?'b. '+yText(f,'b'):f.d?'d. '+yText(f,'d'):'';
+}
+/* What a card needs from a famous relative. */
+function famP(f){ return {name:f.name, b:f.b, bq:f.bq, b2:f.b2, d:f.d, dq:f.dq, d2:f.d2, wiki:f.wiki} }
 function years(p){
   if(p.l) return (p.b&&STATE.showLiving)?yText(p,'b')+'–Living':'Living';
   if(p.b&&p.d) return yText(p,'b')+'–'+yText(p,'d');

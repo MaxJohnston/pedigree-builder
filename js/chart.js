@@ -697,10 +697,10 @@ function addGuests(nodes,seen,view0,addEdge){
         pending.push(nd); gk.set(key,nd); GUEST.set(nd.n,nd);
       }
       if(!last){ var f2=FAMOUS.filter(function(x){return x.name===e[0]})[0];
-        if(f2){ nd.famous=f2; nd.fem=f2.sex==='F'; nd.p={name:f2.name,b:f2.b,d:f2.d,wiki:f2.wiki}; } }
+        if(f2){ nd.famous=f2; nd.fem=f2.sex==='F'; nd.p=famP(f2); } }
       if(nd.to.indexOf(f.name)<0) nd.to.push(f.name);
       if(last){
-        nd.famous=f; nd.p={name:f.name,b:f.b,d:f.d,wiki:f.wiki};
+        nd.famous=f; nd.p=famP(f);
         nd.via=ancNames(r.v)+' → '+pathNames(r.v,f).join(' → ');
         nd.note=r.v.note||'';
       }
@@ -783,7 +783,7 @@ function guestPop(n){
   var lab=relLabel(nd.g,nd.j,nd.half,nd.fem);
   add('Relation',esc(cap(lab))+' of '+esc(czPerson()));
   if(f) add('Title',esc(f.title));
-  if(f&&f.b&&f.d) add('Lived','about '+(f.d-f.b)+' years');
+  if(f&&f.b&&f.d&&!f.bq&&!f.dq) add('Lived','about '+(f.d-f.b-(f.b<0&&f.d>0?1:0))+' years');
   add('Descent','<span class="mute">'+esc(nd.via)+'</span>');
   if(nd.note) add('Note',esc('Shared line runs '+nd.note+'.'));
   if(!f) add('Leads to',esc(nd.to.join(', ')));
@@ -817,7 +817,7 @@ function applyCousins(){
       var vi=sel?Math.min(czSel.get(f.name),x.routes.length-1):0, r=can?x.routes[vi]:x.rels[0];
       var others=x.rels.filter(function(e){return e!==r}).map(function(e){return e.label}).filter(function(l,i,a){return a.indexOf(l)===i&&l!==r.label}).join('; ');
       h+='<li><button class="czi" type="button" data-cz="'+esc(f.name)+'" aria-pressed="'+(sel?'true':'false')+'"'+(can?'':' aria-disabled="true"')+'>'+
-        '<span class="n2">'+(sel?'<span class="sdot" aria-hidden="true">&#9733;</span> ':'')+esc(f.name)+'</span> <span class="t2">'+esc(f.title)+(f.b||f.d?' · '+(f.b&&f.d?yStr(f.b)+'–'+yStr(f.d):f.b?'b. '+yStr(f.b):'d. '+yStr(f.d)):'')+'</span>'+
+        '<span class="n2">'+(sel?'<span class="sdot" aria-hidden="true">&#9733;</span> ':'')+esc(f.name)+'</span> <span class="t2">'+esc(f.title)+(f.b||f.d?' · '+famYears(f):'')+'</span>'+
         '<span class="r2">'+esc(cap(r.label))+(others?' <span class="t2">· also '+esc(others)+'</span>':'')+'</span>'+
         '<span class="v2">'+esc(viaText(r,f))+'</span>'+
         '<span class="v2">'+(can?(sel?(x.routes.length>1?'Showing route '+(vi+1)+' of '+x.routes.length+' in the tree · click for the next, then to hide':'Shown in the tree · click to hide'):'Click to show in the tree'):'Not drawable from this person’s tree (they are more recent than the root)')+'</span></button>'+

@@ -53,6 +53,28 @@ function parseYear(s,label){
   if(y>2100) return {err:label+': that year is out of range.'};
   return {v:y};
 }
+/* A year with an optional qualifier, as typed in a single box: "1850", "c. 1850", "bef. 1700", "aft. 1820",
+   "1820/1825" or "1820–1825" (between), "75/41 BC". Returns {v, q, y2} or {err}. */
+function parseYearQ(s,label){
+  var t=String(s||'').replace(/\u2212/g,'-').replace(/\s+/g,' ').trim(), q='';
+  if(!t) return {v:undefined};
+  var m=/^(c\.?|ca\.?|circa|abt\.?|about|~)\s*(.+)$/i.exec(t); if(m){ q='abt'; t=m[2] }
+  else if((m=/^(bef\.?|before)\s*(.+)$/i.exec(t))){ q='bef'; t=m[2] }
+  else if((m=/^(aft\.?|after)\s*(.+)$/i.exec(t))){ q='aft'; t=m[2] }
+  else if((m=/^(?:bet\.?|between)\s+(.+?)\s+(?:and|&)\s+(.+)$/i.exec(t))) t=m[1]+'/'+m[2];
+  t=t.replace(/(\d{1,4})\s*B\.?\s?C\.?(?:E\.?)?(?![A-Za-z])/gi,'-$1');
+  m=/^(.*\d)\s*(?:\/|–|—|\s-\s|-(?=\d)|\sto\s)\s*(.+)$/i.exec(t);
+  if(m&&!q){
+    var a=parseYear(m[1].trim(),label), z=parseYear(m[2].trim(),label);
+    if(a.err) return a; if(z.err) return z;
+    /* "75/41 BC": the era written once at the end covers both years */
+    if(a.v>0&&z.v<0&&a.v>-z.v&&!/[-]/.test(m[1])) a.v=-a.v;
+    if(!(z.v>a.v)) return {err:label+': in a range, put the earlier year first, such as 1820/1825.'};
+    return {v:a.v, q:'bet', y2:z.v};
+  }
+  var y=parseYear(t,label); if(y.err) return y;
+  return {v:y.v, q:q||undefined};
+}
 function wikiTitle(s){
   s=String(s||'').trim(); if(!s) return undefined;
   if(isUrl(s)&&!/wikipedia\.org/i.test(s)) return s.replace(/ /g,'_');
@@ -64,7 +86,7 @@ var f1=function(label,name,value,opts){
   opts=opts||{};
   var id='f-'+name;
   var tag=opts.area?'<textarea id="'+id+'" name="'+name+'" rows="'+(opts.rows||3)+'"'+(opts.ph?' placeholder="'+esc(opts.ph)+'"':'')+'>'+esc(value)+'</textarea>'
-    :'<input id="'+id+'" name="'+name+'" value="'+esc(value)+'"'+(opts.num?' inputmode="numeric" maxlength="'+(opts.max||4)+'" autocomplete="off"':opts.yr?' maxlength="10" autocomplete="off" spellcheck="false"':' autocomplete="off"')+(opts.ph?' placeholder="'+esc(opts.ph)+'"':'')+(opts.auto?' autofocus':'')+'>';
+    :'<input id="'+id+'" name="'+name+'" value="'+esc(value)+'"'+(opts.num?' inputmode="numeric" maxlength="'+(opts.max||4)+'" autocomplete="off"':opts.yr?' maxlength="'+(opts.max||10)+'" autocomplete="off" spellcheck="false"':' autocomplete="off"')+(opts.ph?' placeholder="'+esc(opts.ph)+'"':'')+(opts.auto?' autofocus':'')+'>';
   return '<label class="f'+(opts.cls?' '+opts.cls:'')+'" for="'+id+'"><span>'+label+'</span>'+tag+(opts.help?'<small>'+opts.help+'</small>':'')+'</label>';
 };
 function sheetHead(kick,title,sub){
@@ -565,7 +587,8 @@ function famousForm(id){
     '<fieldset><legend>Who</legend>'+
       f1('Name','fname',f.name||'',{auto:true,ph:'e.g. Thomas Jefferson'})+
       f1('Known for','ftitle',f.title||'',{ph:'e.g. 3rd U.S. President'})+
-      '<div class="row2">'+f1('Born (year)','fb',f.b||'',{yr:true})+f1('Died (year)','fd',f.d||'',{yr:true})+'</div>'+
+      '<div class="row2">'+f1('Born (year)','fb',f.b?yText(f,'b'):'',{yr:true,max:24})+f1('Died (year)','fd',f.d?yText(f,'d'):'',{yr:true,max:24})+'</div>'+
+      '<p class="note2">For an uncertain year type <i>c. 1850</i>, <i>bef. 1700</i>, <i>aft. 1820</i> or a range such as <i>1820/1825</i>. Years before year 1: <i>-50</i> or <i>50 BC</i>.</p>'+
       f1('Wikipedia article or web page','fwiki',f.wiki?(isUrl(f.wiki)?f.wiki:f.wiki.replace(/_/g,' ')):'',{ph:'Wikipedia title, or a link to any page'})+
       '<label class="f" for="f-fsex"><span>Sex</span><select id="f-fsex" name="fsex"><option value="">Not set</option><option value="M"'+(f.sex==='M'?' selected':'')+'>Male</option><option value="F"'+(f.sex==='F'?' selected':'')+'>Female</option></select><small>Used for words such as aunt, niece and sister.</small></label>'+
     '</fieldset>'+
@@ -584,7 +607,7 @@ function famousForm(id){
   '</form>';
   openSheet(h,function(form){
     var name=fval(form,'fname'); if(!name){sheetErr('Enter the famous person’s name.');return}
-    var by=parseYear(fval(form,'fb'),'Born'), dy=parseYear(fval(form,'fd'),'Died');
+    var by=parseYearQ(fval(form,'fb'),'Born'), dy=parseYearQ(fval(form,'fd'),'Died');
     if(by.err){sheetErr(by.err);return} if(dy.err){sheetErr(dy.err);return}
     var routes=[], bad='';
     form.querySelectorAll('.routebox').forEach(function(rb,i){
@@ -593,7 +616,8 @@ function famousForm(id){
       if(!anc){ if(txt.trim()) bad='Route '+(i+1)+': choose the shared ancestor.'; return }
       var path=txt.split(/\n+/).map(function(s){return s.trim()}).filter(Boolean).map(function(line){
         var parts=line.split(',').map(function(s){return s.trim()});
-        var nm=parts[0]||'…', b=/^\d{1,4}$/.test(parts[1]||'')?+parts[1]:null, d=/^\d{1,4}$/.test(parts[2]||'')?+parts[2]:null, sx=/^[MF]$/i.test(parts[3]||'')?parts[3].toUpperCase():null;
+        var py=function(s){ var r=parseYear(s||'',''); return r.v||null };
+        var nm=parts[0]||'…', b=py(parts[1]), d=py(parts[2]), sx=/^[MF]$/i.test(parts[3]||'')?parts[3].toUpperCase():null;
         return sx?[nm,b,d,sx]:[nm,b,d];
       });
       var r={anc:anc, path:path};
@@ -603,7 +627,7 @@ function famousForm(id){
     });
     if(bad){sheetErr(bad);return}
     if(!routes.length){sheetErr('Add at least one route: choose the ancestor you share with '+name+'.');return}
-    var o={id:(f&&f.id)||uid('f'), name:name, title:fval(form,'ftitle')||undefined, sex:fval(form,'fsex')||undefined, b:by.v, d:dy.v, wiki:wikiTitle(fval(form,'fwiki')), routes:routes};
+    var o={id:(f&&f.id)||uid('f'), name:name, title:fval(form,'ftitle')||undefined, sex:fval(form,'fsex')||undefined, b:by.v, bq:by.q, b2:by.y2, d:dy.v, dq:dy.q, d2:dy.y2, wiki:wikiTitle(fval(form,'fwiki')), routes:routes};
     Object.keys(o).forEach(function(k){ if(o[k]===undefined) delete o[k] });
     STATE.famous=STATE.famous||[];
     var i=STATE.famous.findIndex(function(x){return x.id===o.id});
