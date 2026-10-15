@@ -456,6 +456,14 @@ function ancLabel(g,male){
   var b=male?'great-grandfather':'great-grandmother';
   return g===3?b:ord(g-2)+' '+b;
 }
+/* One line of descent from `from` up to ancestor `to` that is exactly g generations long: [to, …, from]. */
+function chainAt(from,to,g){
+  var L=[new Map([[from,null]])];
+  for(var i=1;i<=g;i++){ var m=new Map(); L[i-1].forEach(function(_,x){ [fa(x),mo(x)].forEach(function(p){ if(P.has(p)&&!m.has(p)) m.set(p,x) }) }); L.push(m) }
+  if(!L[g]||!L[g].has(to)) return null;
+  var out=[to], c=to; for(var j=g;j>0;j--){ c=L[j].get(c); out.push(c) }
+  return out;
+}
 function famRels(f){
   var out=[];
   f.via.forEach(function(v){
@@ -600,7 +608,11 @@ function addGuests(nodes,seen,view0,addEdge){
     var r=ok[Math.min(vi,ok.length-1)], A=seen.get(r.v.anc), sp=r.v.sp&&seen.get(r.v.sp);
     out.anc.add(r.v.anc); if(sp) out.anc.add(r.v.sp);
     var c=r.v.anc; out.route.add(c);
-    while(c!==view0){var pc=ANCPREV.get(c); addEdge(pc+'>'+c); out.route.add(pc); c=pc}
+    /* follow a line of exactly the chosen number of generations, so an ancestor reached by several routes of
+       different lengths shows the route that matches the relationship picked */
+    var ch=chainAt(view0,r.v.anc,r.g);
+    if(ch) for(var q=0;q+1<ch.length;q++){ addEdge(ch[q+1]+'>'+ch[q]); out.route.add(ch[q+1]) }
+    else while(c!==view0){var pc=ANCPREV.get(c); addEdge(pc+'>'+c); out.route.add(pc); c=pc}
     var key=String(r.v.anc), prev=null, pending=[];
     r.v.path.forEach(function(e,i){
       var j=i+1, last=(j===r.v.path.length);
