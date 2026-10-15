@@ -44,8 +44,13 @@ function sheetErr(msg){
 var fval=function(form,name){var el=form.elements[name];return el?String(el.value||'').trim():''};
 function parseYear(s,label){
   if(!s) return {v:undefined};
-  if(!/^\d{3,4}$/.test(s)) return {err:label+': use a year with three or four digits, such as 1872.'};
-  var y=+s; if(y<1||y>2100) return {err:label+': that year is out of range.'};
+  var t=s.replace(/\u2212/g,'-').replace(/\s+/g,' ').trim(), m;
+  if((m=/^(-?)(\d{1,4})$/.exec(t))||(m=/^()(\d{1,4}) ?(?:AD|A\.D\.|CE|C\.E\.)$/i.exec(t))||(m=/^()(?:AD|A\.D\.) ?(\d{1,4})$/i.exec(t))){}
+  else if((m=/^(\d{1,4}) ?(?:BC|B\.C\.|BCE|B\.C\.E\.)$/i.exec(t))) m=[t,'-',m[1]];
+  else return {err:label+': enter a year such as 1872, 45, or -50 (or 50 BC) for a year before year 1.'};
+  var y=+m[2]*(m[1]?-1:1);
+  if(!y) return {err:label+': there is no year 0. Use 1 or -1 (1 BC).'};
+  if(y>2100) return {err:label+': that year is out of range.'};
   return {v:y};
 }
 function wikiTitle(s){
@@ -59,7 +64,7 @@ var f1=function(label,name,value,opts){
   opts=opts||{};
   var id='f-'+name;
   var tag=opts.area?'<textarea id="'+id+'" name="'+name+'" rows="'+(opts.rows||3)+'"'+(opts.ph?' placeholder="'+esc(opts.ph)+'"':'')+'>'+esc(value)+'</textarea>'
-    :'<input id="'+id+'" name="'+name+'" value="'+esc(value)+'"'+(opts.num?' inputmode="numeric" maxlength="'+(opts.max||4)+'" autocomplete="off"':' autocomplete="off"')+(opts.ph?' placeholder="'+esc(opts.ph)+'"':'')+(opts.auto?' autofocus':'')+'>';
+    :'<input id="'+id+'" name="'+name+'" value="'+esc(value)+'"'+(opts.num?' inputmode="numeric" maxlength="'+(opts.max||4)+'" autocomplete="off"':opts.yr?' maxlength="10" autocomplete="off" spellcheck="false"':' autocomplete="off"')+(opts.ph?' placeholder="'+esc(opts.ph)+'"':'')+(opts.auto?' autofocus':'')+'>';
   return '<label class="f'+(opts.cls?' '+opts.cls:'')+'" for="'+id+'"><span>'+label+'</span>'+tag+(opts.help?'<small>'+opts.help+'</small>':'')+'</label>';
 };
 function sheetHead(kick,title,sub){
@@ -277,8 +282,8 @@ function dateRow(lab,k,p){
     f1('Day',k+'dy',p[k+'dy']||'',{num:true,max:2,ph:'Day'})+
     '<label class="f" for="f-'+k+'m"><span>Month</span><select id="f-'+k+'m" name="'+k+'m"><option value="">Month</option>'+
       MONTHS.map(function(m,i){return '<option value="'+(i+1)+'"'+(mv===i+1?' selected':'')+'>'+m+'</option>'}).join('')+'</select></label>'+
-    f1('Year',k,p[k]||'',{num:true,ph:'Year'})+'</div>'+
-    '<div class="y2row" id="y2-'+k+'"'+(q==='bet'?'':' hidden')+'>'+f1('…and year',k+'2',p[k+'2']||'',{num:true,ph:'Later year',help:'For “between”, the earliest and latest possible years.'})+'</div>';
+    f1('Year',k,p[k]||'',{yr:true,ph:'Year'})+'</div>'+
+    '<div class="y2row" id="y2-'+k+'"'+(q==='bet'?'':' hidden')+'>'+f1('…and year',k+'2',p[k+'2']||'',{yr:true,ph:'Later year',help:'For “between”, the earliest and latest possible years.'})+'</div>';
 }
 function qualOf(form,k,y,what){
   var q=fval(form,k+'q'); if(!q) return {};
@@ -304,8 +309,8 @@ function readEvents(form){
     var g=function(nm){return String(r.querySelector('[name="'+nm+'"]').value||'').trim()};
     var t=g('etype'), date=g('edate'), pl=g('eplace'), tx=g('etext');
     if(!date&&!pl&&!tx) return;
-    var m=/\b(\d{3,4})\b/.exec(date), e={id:uid('e'), t:t};
-    if(date) e.date=date; if(m) e.y=+m[1]; if(pl) e.pl=pl; if(tx) e.tx=tx;
+    var m=yearIn(date), e={id:uid('e'), t:t};
+    if(date) e.date=date; if(m) e.y=m; if(pl) e.pl=pl; if(tx) e.tx=tx;
     if(date&&!m&&!err) err=(EVT[t]||'Event')+': include a year in the date, such as 1890.';
     out.push(e);
   });
@@ -560,7 +565,7 @@ function famousForm(id){
     '<fieldset><legend>Who</legend>'+
       f1('Name','fname',f.name||'',{auto:true,ph:'e.g. Thomas Jefferson'})+
       f1('Known for','ftitle',f.title||'',{ph:'e.g. 3rd U.S. President'})+
-      '<div class="row2">'+f1('Born (year)','fb',f.b||'',{num:true})+f1('Died (year)','fd',f.d||'',{num:true})+'</div>'+
+      '<div class="row2">'+f1('Born (year)','fb',f.b||'',{yr:true})+f1('Died (year)','fd',f.d||'',{yr:true})+'</div>'+
       f1('Wikipedia article or web page','fwiki',f.wiki?(isUrl(f.wiki)?f.wiki:f.wiki.replace(/_/g,' ')):'',{ph:'Wikipedia title, or a link to any page'})+
       '<label class="f" for="f-fsex"><span>Sex</span><select id="f-fsex" name="fsex"><option value="">Not set</option><option value="M"'+(f.sex==='M'?' selected':'')+'>Male</option><option value="F"'+(f.sex==='F'?' selected':'')+'>Female</option></select><small>Used for words such as aunt, niece and sister.</small></label>'+
     '</fieldset>'+

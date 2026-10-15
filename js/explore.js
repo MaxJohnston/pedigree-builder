@@ -69,7 +69,7 @@ function findPerson(n){
    generations or switches back to the root's tree if needed, and draws their line of descent. */
 function famCands(){
   return FAMOUS.filter(function(f){return !f.ancestor}).map(function(f){
-    var yrs=f.b&&f.d?f.b+'–'+f.d:f.b?'b. '+f.b:f.d?'d. '+f.d:'';
+    var yrs=f.b&&f.d?yStr(f.b)+'–'+yStr(f.d):f.b?'b. '+yStr(f.b):f.d?'d. '+yStr(f.d):'';
     var meta=[f.title,yrs,'Famous relative'].filter(Boolean).join(' · ');
     return {n:'f:'+f.name, name:f.name, meta:meta, hay:fold(f.name+' '+meta)};
   });
@@ -326,7 +326,7 @@ function timelineSheet(){
   var W=980, LW=230, RH=17, HT=72, top=HT+20, H=top+ppl.length*RH+12;
   var X=function(y){ return LW+(y-y0)/(y1-y0)*(W-LW-14) };
   var g='<svg class="tl" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Timeline of '+ppl.length+' lifespans">';
-  for(var y=y0;y<=y1;y+=st){ g+='<line x1="'+X(y)+'" x2="'+X(y)+'" y1="'+(HT+6)+'" y2="'+H+'" style="stroke:var(--rule-soft)"/><text x="'+X(y)+'" y="'+(HT+16)+'" text-anchor="middle" font-size="10" style="fill:var(--muted)">'+y+'</text>' }
+  for(var y=y0;y<=y1;y+=st){ g+='<line x1="'+X(y)+'" x2="'+X(y)+'" y1="'+(HT+6)+'" y2="'+H+'" style="stroke:var(--rule-soft)"/><text x="'+X(y)+'" y="'+(HT+16)+'" text-anchor="middle" font-size="10" style="fill:var(--muted)">'+yStr(y)+'</text>' }
   /* labels go in the first of four rows where they do not overlap the one before */
   var laneEnd=[-1e9,-1e9,-1e9,-1e9];
   HISTEV.slice().sort(function(a,b){return a[0]-b[0]}).forEach(function(e){

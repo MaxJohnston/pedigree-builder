@@ -817,7 +817,7 @@ function applyCousins(){
       var vi=sel?Math.min(czSel.get(f.name),x.routes.length-1):0, r=can?x.routes[vi]:x.rels[0];
       var others=x.rels.filter(function(e){return e!==r}).map(function(e){return e.label}).filter(function(l,i,a){return a.indexOf(l)===i&&l!==r.label}).join('; ');
       h+='<li><button class="czi" type="button" data-cz="'+esc(f.name)+'" aria-pressed="'+(sel?'true':'false')+'"'+(can?'':' aria-disabled="true"')+'>'+
-        '<span class="n2">'+(sel?'<span class="sdot" aria-hidden="true">&#9733;</span> ':'')+esc(f.name)+'</span> <span class="t2">'+esc(f.title)+(f.b||f.d?' · '+(f.b&&f.d?f.b+'–'+f.d:f.b?'b. '+f.b:'d. '+f.d):'')+'</span>'+
+        '<span class="n2">'+(sel?'<span class="sdot" aria-hidden="true">&#9733;</span> ':'')+esc(f.name)+'</span> <span class="t2">'+esc(f.title)+(f.b||f.d?' · '+(f.b&&f.d?yStr(f.b)+'–'+yStr(f.d):f.b?'b. '+yStr(f.b):'d. '+yStr(f.d)):'')+'</span>'+
         '<span class="r2">'+esc(cap(r.label))+(others?' <span class="t2">· also '+esc(others)+'</span>':'')+'</span>'+
         '<span class="v2">'+esc(viaText(r,f))+'</span>'+
         '<span class="v2">'+(can?(sel?(x.routes.length>1?'Showing route '+(vi+1)+' of '+x.routes.length+' in the tree · click for the next, then to hide':'Shown in the tree · click to hide'):'Click to show in the tree'):'Not drawable from this person’s tree (they are more recent than the root)')+'</span></button>'+
@@ -865,15 +865,20 @@ $('#czp').addEventListener('click',function(e){
 function lifespanText(p){
   if(!p.b||!p.d||p.l) return '';
   var pl=function(n,w){ return n+' '+w+(n===1?'':'s') };
-  if(p.bq||p.dq||!p.bm||!p.dm) return 'about '+pl(p.d-p.b,'year');
-  var exact=!!(p.bdy&&p.ddy), months=(p.d-p.b)*12+(p.dm-p.bm), d=0;
+  /* no year 0: 1 BC (-1) is followed by AD 1 */
+  var span=p.d-p.b-(p.b<0&&p.d>0?1:0);
+  if(p.bq||p.dq||!p.bm||!p.dm) return 'about '+pl(span,'year');
+  var exact=!!(p.bdy&&p.ddy), months=span*12+(p.dm-p.bm), d=0;
   if(exact){
     /* whole months from the birth date (a 31st falls back to the month's last day), then the days left over */
     if(p.ddy<p.bdy) months--;
-    var dim=function(y2,m2){ return new Date(Date.UTC(y2,m2,0)).getUTCDate() };
+    /* Date.UTC would read years 0-99 as 1900-1999, so set the full year directly (BC years shift by one: no year 0) */
+    var ut=function(y2,m2,d2){ var t=new Date(0); t.setUTCFullYear(y2<0?y2+1:y2,m2,d2); return t.getTime() };
+    var dim=function(y2,m2){ return new Date(ut(y2,m2,0)).getUTCDate() };
     var ay=p.b+Math.floor((p.bm-1+months)/12), am=((p.bm-1+months)%12+12)%12+1;
-    var anchor=Date.UTC(ay,am-1,Math.min(p.bdy,dim(ay,am)));
-    d=Math.round((Date.UTC(p.d,p.dm-1,p.ddy)-anchor)/864e5);
+    if(p.b<0&&ay>=0) ay++;
+    var anchor=ut(ay,am-1,Math.min(p.bdy,dim(ay,am)));
+    d=Math.round((ut(p.d,p.dm-1,p.ddy)-anchor)/864e5);
   }
   if(months<0||d<0) return '';
   var y=Math.floor(months/12), m=months%12;
@@ -980,8 +985,10 @@ function closeDetails(quiet){
 function placePop(){
   if(openN==null) return;
   var card=cardEl(openN); if(!card){closeDetails(true);return}
-  if(narrow.matches){pop.style.left='';pop.style.top='';return}
+  if(narrow.matches){pop.style.left='';pop.style.top='';pop.style.maxHeight='';return}
   var s=stage.getBoundingClientRect(), r=card.getBoundingClientRect();
+  /* never taller than the chart area: a long entry scrolls inside the popover instead of running off the bottom */
+  pop.style.maxHeight=Math.max(120,s.height-16)+'px';
   var pw=pop.offsetWidth, ph=pop.offsetHeight;
   var left=clamp(r.left-s.left,8,Math.max(8,s.width-pw-8));
   var top=r.bottom-s.top+6;

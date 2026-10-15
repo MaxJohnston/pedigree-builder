@@ -130,13 +130,13 @@ select{padding:0 8px}
 .note{position:absolute;margin:0;font-size:13px;color:var(--muted);white-space:nowrap}
 
 .pop{
-  position:absolute;z-index:5;width:min(330px,calc(100% - 16px));
+  position:absolute;z-index:5;width:min(360px,calc(100% - 16px));max-height:calc(100% - 16px);overflow:auto;overscroll-behavior:contain;
   background:var(--surface);color:var(--fg);border:1px solid var(--rule);border-radius:10px;
   box-shadow:0 14px 34px rgba(0,0,0,.2);padding:14px 16px 12px;
 }
 .pop h2{margin:0;font:500 21px/1.15 var(--font-display);text-wrap:balance}
 .pop .life{margin:4px 0 0;font:400 12px var(--font-mono);color:var(--muted)}
-.pop dl{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;margin:12px 0 0;font-size:13px}
+.pop dl{display:grid;grid-template-columns:fit-content(36%) 1fr;gap:7px 14px;margin:12px 0 0;font-size:13px}
 .pop dt{color:var(--muted)}
 .pop dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .pop .mute{color:var(--muted)}

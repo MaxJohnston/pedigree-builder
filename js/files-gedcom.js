@@ -32,8 +32,9 @@ var EV2GED={bapm:'BAPM',chr:'CHR',buri:'BURI',immi:'IMMI',emig:'EMIG',natu:'NATU
 function gedDateOf(p,k){
   var y=p[k]; if(!y) return '';
   var q=p[k+'q'];
-  if(q==='bet'&&p[k+'2']) return 'BET '+y+' AND '+p[k+'2'];
-  var parts=[], m=p[k+'m'], d=p[k+'dy']; if(m&&d) parts.push(d); if(m) parts.push(GMON[m-1]); parts.push(y);
+  var gy=function(v){ return v<0?(-v)+' B.C.':String(v) };
+  if(q==='bet'&&p[k+'2']) return 'BET '+gy(y)+' AND '+gy(p[k+'2']);
+  var parts=[], m=p[k+'m'], d=p[k+'dy']; if(m&&d) parts.push(d); if(m) parts.push(GMON[m-1]); parts.push(gy(y));
   return ({abt:'ABT ',bef:'BEF ',aft:'AFT '}[q]||'')+parts.join(' ');
 }
 /* free-text event date ("abt 1850", "12 May 1890") to GEDCOM; unknown wording is kept as a date phrase */
@@ -42,6 +43,7 @@ function gedDateText(t){
   var u=t.toUpperCase().replace(/\bABOUT\b|\bCIRCA\b|\bC\.\s*/g,'ABT ').replace(/\bBEFORE\b/g,'BEF').replace(/\bAFTER\b/g,'AFT').replace(/\bBETWEEN\b/g,'BET').replace(/,/g,' ').replace(/\s+/g,' ').trim();
   u=u.replace(/\b(JANUARY|FEBRUARY|MARCH|APRIL|JUNE|JULY|AUGUST|SEPTEMBER|SEPT|OCTOBER|NOVEMBER|DECEMBER)\b/g,function(m){return m.slice(0,3)});
   if(/^((ABT|BEF|AFT|EST|CAL) )?((\d{1,2} )?(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC) )?\d{3,4}$/.test(u)||/^BET \d{3,4} AND \d{3,4}$/.test(u)) return u;
+  var yb=yearIn(t); if(yb!=null&&/^((ABT|BEF|AFT|EST|CAL) )?((\d{1,2} )?(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC) )?[\-\u2212]?\d{1,4}( ?B\.?C\.?E?\.?)?$/.test(u)) return u.replace(/[\-\u2212]?(\d{1,4})( ?B\.?C\.?E?\.?)?$/,yb<0?(-yb)+' B.C.':String(yb));
   return '('+t.replace(/[()]/g,'')+')';
 }
 function gedLines(lv,tag,val,out){
@@ -168,10 +170,13 @@ var gks=function(nd,t){ return nd.kids.filter(function(k){return k.tag===t}) };
 var gv=function(nd,t){ var k=nd&&gk(nd,t); return k?String(k.val||'').trim():'' };
 var GMAP={JAN:1,FEB:2,MAR:3,APR:4,MAY:5,JUN:6,JUL:7,AUG:8,SEP:9,OCT:10,NOV:11,DEC:12};
 function gedSimple(v){
-  var t=String(v||'').replace(/@#D[^@]*@/g,'').replace(/\(.*?\)/g,' ').trim().toUpperCase().split(/[\s,.]+/).filter(Boolean);
+  var s=String(v||'').replace(/@#D[^@]*@/g,'').replace(/\(.*?\)/g,' ').trim().toUpperCase(), bc=false;
+  s=s.replace(/\s*\bB\.?\s?C\.?(E\.?)?(?![A-Z])/g,function(){ bc=true; return '' });
+  var t=s.split(/[\s,.]+/).filter(Boolean);
   var y=null, mo2=0, d=0;
-  for(var i=t.length-1;i>=0;i--){ var mm=/^(\d{3,4})(\/\d+)?$/.exec(t[i]); if(mm){ y=+mm[1]; t=t.slice(0,i); break } }
+  for(var i=t.length-1;i>=0;i--){ var mm=/^(-?)(\d{1,4})(\/\d+)?$/.exec(t[i]); if(mm){ y=+mm[2]; if(mm[1]) bc=true; t=t.slice(0,i); break } }
   if(!y) return null;
+  if(bc) y=-y;
   if(t.length&&GMAP[t[t.length-1].slice(0,3)]){ mo2=GMAP[t[t.length-1].slice(0,3)]; t.pop(); if(t.length&&/^\d{1,2}$/.test(t[t.length-1])) d=+t[t.length-1] }
   return {y:y,m:mo2,d:d};
 }
@@ -188,7 +193,7 @@ function gedParseDate(v){
 function gedHuman(v){
   v=String(v||'').trim(); if(!v) return '';
   if(/^\(.*\)$/.test(v)) return v.slice(1,-1);
-  return v.replace(/@#D[^@]*@\s*/g,'').toLowerCase().replace(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/g,function(m){return m.charAt(0).toUpperCase()+m.slice(1)});
+  return v.replace(/@#D[^@]*@\s*/g,'').toLowerCase().replace(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/g,function(m){return m.charAt(0).toUpperCase()+m.slice(1)}).replace(/\bb\.?\s?c\.?(e\.?)?(?![a-z])/g,'BC');
 }
 var GED2EV={BAPM:'bapm',CHR:'chr',BURI:'buri',CREM:'buri',IMMI:'immi',EMIG:'emig',NATU:'natu',RESI:'resi',EDUC:'educ',CENS:'cens',RELI:'reli',_MILT:'mili',_MILI:'mili',MILI:'mili',GRAD:'educ',PROB:'even',WILL:'even',CONF:'even',BARM:'even',BASM:'even',ADOP:'even',ORDN:'even',RETI:'even',EVEN:'even',DIV:'div'};
 function gedName(ind){
@@ -232,7 +237,7 @@ function gedImportStart(text,fname){
   var cands=inds.map(function(k,i){
     var ind=G.recs[k], nm=gedName(ind), name=[nm.fn,nm.mn,nm.ln,nm.sx].filter(Boolean).join(' ')||'(no name)';
     var b=gk(ind,'BIRT'), by=b?gedSimple(gv(b,'DATE')):null, pl=b?gv(b,'PLAC'):'';
-    var meta=[by?'b. '+by.y:'',pl].filter(Boolean).join(' · ');
+    var meta=[by?'b. '+yStr(by.y):'',pl].filter(Boolean).join(' · ');
     return {n:i, id:k, name:name, meta:meta, hay:fold(name+' '+meta)};
   });
   var cur=fold((P.get(1)&&P.get(1).bname)||''), def=cands.filter(function(c){return fold(c.name)===cur})[0]||cands[0];
@@ -272,7 +277,7 @@ function gedBuild(G,rootId){
       var t=GED2EV[k.tag]; if(!t) return;
       var e={id:uid('e'),t:t}, ty=gv(k,'TYPE');
       if(k.tag==='EVEN'&&/milit/i.test(ty)) e.t='mili';
-      var dt=gv(k,'DATE'); if(dt){ e.date=gedHuman(dt); var yy=/\b(\d{3,4})\b/.exec(dt); if(yy) e.y=+yy[1] }
+      var dt=gv(k,'DATE'); if(dt){ e.date=gedHuman(dt); var yy=yearIn(gedHuman(dt)); if(yy!=null) e.y=yy }
       var pl=gv(k,'PLAC'); if(pl) e.pl=pl;
       var tx=[e.t==='even'&&ty?ty:'',String(k.val||'').trim()==='Y'?'':String(k.val||'').trim(),gv(k,'NOTE')].filter(Boolean).join(' · '); if(tx) e.tx=tx;
       ev.push(e); src=src.concat(gedSources(G,k,e.t==='div'?'events':'events'));
@@ -281,7 +286,7 @@ function gedBuild(G,rootId){
       var F=G.recs[String(fr.val).trim()]; if(!F) return;
       var sp=[gv(F,'HUSB'),gv(F,'WIFE')].filter(function(x){return x&&x!==id})[0], spn=sp&&G.recs[sp]?(function(){var z=gedName(G.recs[sp]);return [z.fn,z.mn,z.ln,z.sx].filter(Boolean).join(' ')})():'';
       ['MARR','DIV'].forEach(function(T){ var M=gk(F,T); if(!M) return;
-        var e={id:uid('e'),t:T==='MARR'?'marr':'div'}, dt=gv(M,'DATE'); if(dt){ e.date=gedHuman(dt); var yy=/\b(\d{3,4})\b/.exec(dt); if(yy) e.y=+yy[1] }
+        var e={id:uid('e'),t:T==='MARR'?'marr':'div'}, dt=gv(M,'DATE'); if(dt){ e.date=gedHuman(dt); var yy=yearIn(gedHuman(dt)); if(yy!=null) e.y=yy }
         var pl=gv(M,'PLAC'); if(pl) e.pl=pl; if(spn) e.tx=(T==='MARR'?'to ':'from ')+spn; ev.push(e); src=src.concat(gedSources(G,M,T==='MARR'?'marr':'events')) });
     });
     if(ev.length) o.ev=ev;

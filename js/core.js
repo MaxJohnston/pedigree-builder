@@ -193,21 +193,31 @@ function birthDate(p){
   if(p.l&&!STATE.showLiving) return '';
   return fullDate(p,'b');
 }
+/* Years before year 1 are stored as negative numbers and shown as "50 BC". There is no year 0. */
+function yStr(y){ y=+y; return y<0?(-y)+' BC':String(y) }
+/* The year in a free-text date: the last number, negative when "BC"/"BCE" follows or a minus sign comes before it. */
+function yearIn(t){
+  t=String(t||''); var re=/(^|[^\d\-\u2212])([\-\u2212]?)(\d{1,4})(?!\d)(\s*B\.?\s?C\.?(?:E\.?)?(?![A-Za-z]))?/gi, m, last=null;
+  while((m=re.exec(t))) last=m;
+  if(!last) return null;
+  var y=+last[3]; if(!y) return null;
+  return (last[2]||last[4])?-y:y;
+}
 /* Short year for cards: "c. 1850", "bef. 1700", "aft. 1820", "1820/1825". k is "b" (birth) or "d" (death). */
 function yText(p,k){
   var y=p[k]; if(!y) return '';
   var q=p[k+'q'], y2=p[k+'2'];
-  if(q==='abt') return 'c. '+y; if(q==='bef') return 'bef. '+y; if(q==='aft') return 'aft. '+y;
-  if(q==='bet'&&y2) return y+'/'+y2;
-  return String(y);
+  if(q==='abt') return 'c. '+yStr(y); if(q==='bef') return 'bef. '+yStr(y); if(q==='aft') return 'aft. '+yStr(y);
+  if(q==='bet'&&y2) return y<0&&y2<0?(-y)+'/'+yStr(y2):yStr(y)+'/'+yStr(y2);
+  return yStr(y);
 }
 /* Full date in words: "17 June 1934", "about 1850", "between 1820 and 1825". */
 function fullDate(p,k){
   var y=p[k]; if(!y) return '';
   var q=p[k+'q'];
-  if(q==='bet'&&p[k+'2']) return 'between '+y+' and '+p[k+'2'];
+  if(q==='bet'&&p[k+'2']) return 'between '+yStr(y)+' and '+yStr(p[k+'2']);
   var m=p[k+'m'], d=p[k+'dy'], parts=[];
-  if(m&&d) parts.push(d); if(m) parts.push(MONTHS[m-1]); parts.push(y);
+  if(m&&d) parts.push(d); if(m) parts.push(MONTHS[m-1]); parts.push(yStr(y));
   return ({abt:'about ',bef:'before ',aft:'after '}[q]||'')+parts.join(' ');
 }
 function years(p){

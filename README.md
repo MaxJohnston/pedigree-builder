@@ -126,7 +126,7 @@ The form is divided into sections:
 - **Married last name(s):** separate several with commas. See [View options](#view-options) to show them on the chart.
 - **Sex:** set on your own (root) record. For everyone else it follows their place in the tree: fathers are male and mothers female.
 - **Living:** ticking it hides the death fields.
-- **Birth date and death date:** choose the precision first (*Exact*, *About*, *Before*, *After* or *Between*), then the day, month and year. Day and month are optional. *Between* asks for a second, later year. The form checks for impossible dates such as 31 April or 29 February in a non-leap year.
+- **Birth date and death date:** choose the precision first (*Exact*, *About*, *Before*, *After* or *Between*), then the day, month and year. Day and month are optional. *Between* asks for a second, later year. A year can have one to four digits. For a year before year 1, type a minus sign or *BC* (`-50` or `50 BC`); it shows as *50 BC*. There is no year 0. The form checks for impossible dates such as 31 April or 29 February in a non-leap year.
 - **Born in** and **Died in:** write places from smallest to largest, separated by commas, for example *Xenia, Greene County, Ohio, USA*. The places view groups places by the last parts.
 
 **Life:** occupation, spouse, children and notes.
@@ -469,7 +469,7 @@ Person fields (only the ones that are filled in are written):
 | `name` | Full name at birth. `fn`, `mn`, `ln`, `sx`: first, middle, last name and suffix. `mln`: married last names. |
 | `sex` | `M` or `F`, root person only. |
 | `l` | `1` if living. |
-| `b`, `bm`, `bdy` | Birth year, month (1–12) and day. `bq`: `abt`, `bef`, `aft` or `bet`; `b2`: the later year for `bet`. |
+| `b`, `bm`, `bdy` | Birth year (negative before year 1, so `-50` is 50 BC), month (1–12) and day. `bq`: `abt`, `bef`, `aft` or `bet`; `b2`: the later year for `bet`. |
 | `d`, `dm`, `ddy`, `dq`, `d2` | The same for death. |
 | `bp`, `dp` | Birth and death places. |
 | `occ`, `spouse`, `notes`, `star`, `wiki` | Occupation, spouse, notes, notable for, and a link: a Wikipedia article title, or the full address (`https://…`) of any page. |
