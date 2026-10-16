@@ -88,6 +88,15 @@ function syncUndo(){
   var u=$('#undo'), r=$('#redo');
   if(u){ u.disabled=!UNDO.length; u.title=UNDO.length?'Undo: '+UNDO[UNDO.length-1].desc+' (Ctrl+Z)':'Nothing to undo' }
   if(r){ r.disabled=!REDO.length; r.title=REDO.length?'Redo: '+REDO[REDO.length-1].desc+' (Ctrl+Shift+Z)':'Nothing to redo' }
+  var uh=$('#unhide'), nh=(STATE.people||[]).filter(function(p){return p.pflag}).length;
+  if(uh){ uh.disabled=!nh; uh.title=nh?'Turn off "Show birthplace flag instead of parents" for '+nh+(nh===1?' person':' people'):'No parents are hidden behind a birthplace flag' }
+}
+/* Edit bar → "Show all hidden parents": turns off "Show birthplace flag instead of parents" on everyone, as one step */
+function unhideAll(){
+  var hid=(STATE.people||[]).filter(function(p){return p.pflag}); if(!hid.length) return;
+  hid.forEach(function(p){ delete p.pflag });
+  commit(false,false,'Showed the hidden parents of '+(hid.length===1?hid[0].name:hid.length+' people'));
+  toast('Showed the hidden parents of '+(hid.length===1?hid[0].name:hid.length+' people'),'Undo',undo);
 }
 /*}edit*/
 var toastT=0;
@@ -175,6 +184,7 @@ $('#editbar').addEventListener('click',function(e){
   else if(a==='famous') famousMgr();
   else if(a==='data') dataMgr();
   else if(a==='me'){ curN=1; editPerson(1,false); }
+  else if(a==='unhide') unhideAll();
   else if(a==='undo') undo();
   else if(a==='redo') redo();
   else if(a==='history') historySheet();
