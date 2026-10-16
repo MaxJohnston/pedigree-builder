@@ -280,6 +280,21 @@ function render(keep){
   function longCrossings(u,v){ return routeOf(u,v).c }
   /* Parents reached by a line that skips generations start out centred on their nearest child. Slide them, with everyone
      behind them, toward the middle of all their children, as far as there is room in every column they occupy. */
+  /* Brothers and sisters drawn together keep their rows, but each takes the row nearest its own child: the one whose
+     child is higher up the chart goes on top, so the lines to their children do not cross (pedigree collapse can put
+     those children far apart). */
+  function sibOrder(){
+    var inc=new Map();
+    nodes.forEach(function(u){ u.kids.forEach(function(k){ var a=inc.get(k)||[]; a.push(u.y); inc.set(k,a) }) });
+    nodes.forEach(function(n){
+      if(!n.grp||n.ghost) return;
+      var g=n.grp.slice(), slots=g.map(function(m){return m.y}).sort(function(a,b){return a-b});
+      var key=function(m){ var a=inc.get(m); return a&&a.length?a.reduce(function(s,v){return s+v},0)/a.length:m.y };
+      var ks=new Map(g.map(function(m){return [m,key(m)]}));
+      g.sort(function(a,b){ return ks.get(a)-ks.get(b)||a.y-b.y });
+      g.forEach(function(m,i){ m.y=slots[i] });
+    });
+  }
   function centerCross(){
     var inc=new Map();
     nodes.forEach(function(u){ u.kids.forEach(function(k){ if(k.add||k.rep) return; var a=inc.get(k)||[]; if(a.indexOf(u)<0) a.push(u); inc.set(k,a) }) });
@@ -307,7 +322,7 @@ function render(keep){
   }
   /* Repeat cards are decided without edit mode's "Add father/mother" cards, so entering edit mode never changes them. */
   for(var pass=0;pass<8;pass++){
-    build(false); group(); lay(rn); settle(rn,0); centerCross(); IDX=null;
+    build(false); group(); lay(rn); settle(rn,0); sibOrder(); centerCross(); IDX=null;
     var top=Infinity; nodes.forEach(function(x){ if(x.y<top) top=x.y });
     nodes.forEach(function(x){ x.y-=top });
     var bad=[];
@@ -320,13 +335,13 @@ function render(keep){
   REPOPT=split.size>0;
   if(STATE.oneCard&&split.size){
     split.forEach(function(m){ WIDEN.add(m) }); split.clear();
-    build(false); group(); lay(rn); settle(rn,0); centerCross();
+    build(false); group(); lay(rn); settle(rn,0); sibOrder(); centerCross();
     var top1=Infinity; nodes.forEach(function(x){ if(x.y<top1) top1=x.y });
     nodes.forEach(function(x){ x.y-=top1 });
   }
 /*{edit*/
   if(editing){
-    build(true); group(); lay(rn); settle(rn,0); centerCross();
+    build(true); group(); lay(rn); settle(rn,0); sibOrder(); centerCross();
     var top2=Infinity; nodes.forEach(function(x){ if(x.y<top2) top2=x.y });
     nodes.forEach(function(x){ x.y-=top2 });
   }
