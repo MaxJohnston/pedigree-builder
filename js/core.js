@@ -291,11 +291,11 @@ function renderLegend(){
 
 /* Generation labels live in a strip outside the scrolling chart, so they stay in view while
    scrolling down. They follow horizontal scroll and zoom. */
-function buildHeads(maxD,hapOnly){
+function buildHeads(maxD,hapOnly,flagOnly){
   var h='';
   for(var c=0;c<=maxD;c++){
-    var ho=hapOnly&&hapOnly(c);
-    h+='<div class="hd'+(c%2?' alt':'')+'" data-c="'+c+'"><b>'+(ho?'DNA':(c+1))+'</b><span class="tx">'+(ho?'Haplogroup':esc(genLabel(c)))+'</span></div>';
+    var ho=hapOnly&&hapOnly(c), fo=!ho&&flagOnly&&flagOnly(c);
+    h+='<div class="hd'+(c%2?' alt':'')+'" data-c="'+c+'"><b>'+(ho?'DNA':fo?'':(c+1))+'</b><span class="tx">'+(ho?'Haplogroup':fo?'Birthplaces':esc(genLabel(c)))+'</span></div>';
   }
   hin.innerHTML=h;
 }

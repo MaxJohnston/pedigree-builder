@@ -64,7 +64,7 @@ function flagOf(place){
 /* the flags the current tree uses, so a read-only copy carries only those */
 function usedFlags(){
   var out={}; if(typeof FLAGS==='undefined') return out;
-  var endOf=function(p){ return STATE.endFlags&&p.ref==null&&p.bp&&!P.has(fa(p.n))&&!P.has(mo(p.n)) };
+  var endOf=function(p){ return STATE.endFlags&&p.ref==null&&p.bp };
   (STATE.people||[]).forEach(function(p){ if(!p.pflag&&!endOf(p)) return; var src=p; if(p.ref!=null){ var r=rawP(p.ref); if(r) src=r }
     var f=flagOf(src.bp); if(f.code&&FLAGS[f.code]) out[f.code]=FLAGS[f.code] });
   return out;
@@ -103,7 +103,7 @@ function render(keep){
       var nd=seen.get(n), p=nd.p;
       if(flagged(n)&&!p.ref){
         /* one card with the flag of their birthplace, where the parents would be */
-        if(nd.d<D-1){ var fl={n:-(n+0.5),d:nd.d+1,p:{name:''},kids:[],owner:nd,flag:flagOf(p.bp),child:n,color:lc(n)}; nd.kids.push(fl); nodes.push(fl) }
+        if(nd.d<(STATE.endFlags?D:D-1)){ var fl={n:-(n+0.5),d:nd.d+1,p:{name:''},kids:[],owner:nd,flag:flagOf(p.bp),child:n,color:lc(n)}; nd.kids.push(fl); nodes.push(fl) }
         nd.more=false; return;
       }
       if(!p.ref) (p.mf?[mo(n),fa(n)]:[fa(n),mo(n)]).forEach(function(m){
@@ -122,10 +122,13 @@ function render(keep){
 /*}edit*/
       });
       nd.more=(nd.d===D-1)&&(P.has(fa(n))||P.has(mo(n)));
-      /* View → "Show birthplace flags at the end of each line": someone with no parents recorded but a birthplace gets a
-         flag card where their parents would be (not in edit mode, where those places hold the "Add father/mother" cards) */
-      if(STATE.endFlags&&!withAdd&&!p.ref&&p.bp&&!P.has(fa(n))&&!P.has(mo(n))&&nd.d<D-1){
+      /* View → "Show birthplace flags at the end of each line": someone with a birthplace whose line ends here, because no
+         parents are recorded or because this is the last generation shown, gets a flag card where their parents would be,
+         in one extra column after the last generation if needed (not in edit mode, where those places hold the
+         "Add father/mother" cards) */
+      if(STATE.endFlags&&!withAdd&&!p.ref&&p.bp&&(nd.d===D-1||!P.has(fa(n))&&!P.has(mo(n)))){
         var ef={n:-(n+0.5),d:nd.d+1,p:{name:''},kids:[],owner:nd,flag:flagOf(p.bp),child:n,color:lc(n)}; nd.kids.push(ef); nodes.push(ef);
+        nd.more=false;
       }
     })(view);
     rn=seen.get(view);
@@ -545,8 +548,9 @@ function render(keep){
   var ocr=document.getElementById('onecardrow'); if(ocr) ocr.hidden=!REPOPT;
   world.style.width=ww+'px'; world.style.height=wh+'px';
   rootCy=cy(rn);
-  var realCols=new Set(nodes.filter(function(x){return !x.hap}).map(function(x){return x.d}));
-  buildHeads(maxD,function(c){return !realCols.has(c)});
+  var realCols=new Set(nodes.filter(function(x){return !x.hap&&!x.flag}).map(function(x){return x.d}));
+  var flagCols=new Set(nodes.filter(function(x){return x.flag}).map(function(x){return x.d}));
+  buildHeads(maxD,function(c){return !realCols.has(c)&&!flagCols.has(c)},function(c){return !realCols.has(c)&&flagCols.has(c)});
 
   var rp=P.get(view), isHome=view===1;
   $('#kicker').textContent=isHome?'Pedigree chart':'Pedigree from the perspective of';
