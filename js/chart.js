@@ -64,8 +64,8 @@ function flagOf(place){
 /* the flags the current tree uses, so a read-only copy carries only those */
 function usedFlags(){
   var out={}; if(typeof FLAGS==='undefined') return out;
-  var endOf=function(p){ return STATE.endFlags&&p.ref==null&&p.bp };
-  (STATE.people||[]).forEach(function(p){ if(!p.pflag&&!endOf(p)) return; var src=p; if(p.ref!=null){ var r=rawP(p.ref); if(r) src=r }
+  /* every birthplace, since the Birthplace mix chart can show any of them */
+  (STATE.people||[]).forEach(function(p){ var src=p; if(p.ref!=null){ var r=rawP(p.ref); if(r) src=r }
     var f=flagOf(src.bp); if(f.code&&FLAGS[f.code]) out[f.code]=FLAGS[f.code] });
   return out;
 }

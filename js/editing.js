@@ -22,12 +22,26 @@ var sheet=$('#sheet'), scrim=$('#scrim'), sheetFocus=null, sheetSubmit=null;
 function openSheet(html,onSubmit,wide){
   closeDetails(true); closeMenus();
   sheet.classList.toggle('wide',!!wide);
+  sheet.style.width=wide&&sheetW?Math.min(sheetW,innerWidth)+'px':'';
   sheetFocus=document.activeElement;
-  sheet.innerHTML=html; sheet.hidden=false; scrim.hidden=false;
+  sheet.innerHTML=html+(wide?'<div class="sgrip" aria-hidden="true" title="Drag to make this panel wider or narrower"></div>':''); sheet.hidden=false; scrim.hidden=false;
   sheetSubmit=onSubmit||null;
   var f=sheet.querySelector('[autofocus]')||sheet.querySelector('input,textarea,select,button');
   try{(f||sheet).focus({preventScroll:true})}catch(_){}
 }
+/* Wide panels (Explore) can be widened by dragging their left edge on a desktop. The width is remembered in this browser,
+   and the timeline is drawn again at the new width so it gets longer rather than just bigger. */
+var sheetW=0; try{ sheetW=parseInt(localStorage.getItem('pedigree-builder-panel-width'),10)||0 }catch(_){}
+sheet.addEventListener('pointerdown',function(e){
+  var g=e.target.closest('.sgrip'); if(!g||e.button!==0) return;
+  e.preventDefault(); g.setPointerCapture(e.pointerId); sheet.classList.add('sizing');
+  var mv=function(ev){ var w=Math.max(460,Math.min(innerWidth,innerWidth-ev.clientX)); sheet.style.width=w+'px' };
+  var up=function(){ g.removeEventListener('pointermove',mv); g.removeEventListener('pointerup',up); g.removeEventListener('pointercancel',up); sheet.classList.remove('sizing');
+    sheetW=Math.round(sheet.getBoundingClientRect().width); try{ localStorage.setItem('pedigree-builder-panel-width',String(sheetW)) }catch(_){}
+    if(sheet.querySelector('svg.tl')){ var sb=sheet.querySelector('.sbody'), top=sb?sb.scrollTop:0; timelineSheet(); sb=sheet.querySelector('.sbody'); if(sb) sb.scrollTop=top }
+  };
+  g.addEventListener('pointermove',mv); g.addEventListener('pointerup',up); g.addEventListener('pointercancel',up);
+});
 function closeSheet(){
   if(sheet.hidden) return;
   sheet.hidden=true; scrim.hidden=true; sheet.innerHTML=''; sheetSubmit=null;
@@ -815,6 +829,8 @@ sheet.addEventListener('click',function(e){
 /*}edit*/
   else if(s==='walls-all'){ wallsAll=true; reportSheet(); }
   else if(s==='pl-lvl'){ placesSheet(b.getAttribute('data-v')); }
+  else if(s==='pl-tab'){ plTab=b.getAttribute('data-v'); placesSheet(); }
+  else if(s==='tl-ord'){ tlOrder=b.getAttribute('data-v'); try{ localStorage.setItem('pedigree-builder-timeline-order',tlOrder) }catch(_){} timelineSheet(); }
 /*{edit*/
   else if(s==='copy-exp'){
     var ta2=sheet.querySelector('#f-exp'), pick=function(){ try{ta2.focus();ta2.select();ta2.setSelectionRange(0,ta2.value.length)}catch(_){} };

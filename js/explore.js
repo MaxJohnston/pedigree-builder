@@ -103,7 +103,7 @@ $('#exploremenu').addEventListener('click',function(e){
   var x=b.getAttribute('data-x'); closeMenus();
   if(x==='rel') relSheet(1,null);
   else if(x==='report') reportSheet();
-  else if(x==='places') placesSheet('region');
+  else if(x==='places') placesSheet();
   else if(x==='timeline') timelineSheet();
 });
 
@@ -265,6 +265,64 @@ function reportSheet(){
   openSheet(h,null,true);
 }
 
+/* ----- places: birthplace mix ----- */
+/* "Birthplace mix" tab: how the ancestors in one generation divide up by the flag of their birthplace. Every slot of that
+   generation counts 1/2^(g-1). A slot with no person, or a person with no birthplace, takes the birthplace of the nearest
+   descendant on that line who has one, so a line that stops early still counts in full. Counts are kept as whole numbers
+   of slots, so the fractions are exact. */
+var plTab='moves', plGen=0;
+function birthMix(root,g){
+  var memo=new Map(), rep={};
+  var keyOf=function(bp){ var f=flagOf(bp), k=f.code?f.code:'?'+f.label; if(!rep[k]) rep[k]=bp; return k };
+  var one=function(k,rem){ var o={}; o[k]=Math.pow(2,rem); return o };
+  var walk=function(n,rem,inh){
+    if(!P.has(n)) return one(inh,rem);
+    var c=canonOf(n), p=P.get(c), own=p.bp?keyOf(p.bp):'', k=own||inh;
+    if(rem===0||(!P.has(fa(c))&&!P.has(mo(c)))) return one(k,rem);
+    var mk=c+'|'+rem+'|'+(own?'':inh); if(memo.has(mk)) return memo.get(mk);
+    var a=walk(fa(c),rem-1,k), b=walk(mo(c),rem-1,k), o={};
+    [a,b].forEach(function(d){ for(var x in d) o[x]=(o[x]||0)+d[x] });
+    memo.set(mk,o); return o;
+  };
+  return {d:walk(root,g-1,''), rep:rep};
+}
+function mixSheetBody(){
+  var maxG=Math.max(2,DEEPEST||2), g=Math.min(Math.max(2,plGen||depth),maxG); plGen=g;
+  var bm=birthMix(view,g), d=bm.d, tot=Math.pow(2,g-1);
+  var gcd=function(a,b){ while(b){ var t=a%b; a=b; b=t } return a };
+  var rows=Object.keys(d).map(function(k){
+    var f=k===''?{code:'',label:'Not recorded',sub:'No birthplace on this line',src:''}:flagOf(bm.rep[k]);
+    var c=d[k], q=gcd(c,tot); return {k:k,f:f,c:c,fr:c===tot?'All':(c/q)+'/'+(tot/q),pc:100*c/tot};
+  }).sort(function(a,b){ return (a.k==='')-(b.k==='')||b.c-a.c||a.f.label.localeCompare(b.f.label) });
+  var opts=''; for(var i=2;i<=maxG;i++) opts+='<option value="'+i+'"'+(i===g?' selected':'')+'>'+i+' · '+esc(genLabel(i-1))+'</option>';
+  /* the pie: each slice filled with its flag, cropped to the slice */
+  var R=120, C=R+4, a0=-Math.PI/2, defs='', sl='';
+  var pt=function(a){ return [C+R*Math.cos(a), C+R*Math.sin(a)] };
+  rows.forEach(function(r,i){
+    var span=2*Math.PI*r.c/tot, a1=a0+span, path, tt=r.f.label+(r.f.sub?' ('+r.f.sub+')':'')+': '+r.fr+' · '+(r.pc>=1?r.pc.toFixed(1):r.pc.toPrecision(2))+'%';
+    if(rows.length===1) path='M'+(C-R)+' '+C+'A'+R+' '+R+' 0 1 1 '+(C+R)+' '+C+'A'+R+' '+R+' 0 1 1 '+(C-R)+' '+C+'Z';
+    else { var p0=pt(a0), p1=pt(a1); path='M'+C+' '+C+'L'+p0[0].toFixed(2)+' '+p0[1].toFixed(2)+'A'+R+' '+R+' 0 '+(span>Math.PI?1:0)+' 1 '+p1[0].toFixed(2)+' '+p1[1].toFixed(2)+'Z' }
+    var fill='var(--rule)';
+    if(r.f.src){
+      var xs=[C], ys=[C]; for(var s=0;s<=24;s++){ var q=pt(a0+span*s/24); xs.push(q[0]); ys.push(q[1]) }
+      if(rows.length===1){ xs=[C-R,C+R]; ys=[C-R,C+R] }
+      var x0=Math.min.apply(null,xs), y0=Math.min.apply(null,ys), w=Math.max.apply(null,xs)-x0, h=Math.max.apply(null,ys)-y0;
+      defs+='<pattern id="pfl'+i+'" patternUnits="userSpaceOnUse" x="'+x0.toFixed(1)+'" y="'+y0.toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'"><image href="'+r.f.src+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" preserveAspectRatio="xMidYMid slice"/></pattern>';
+      fill='url(#pfl'+i+')';
+    }
+    sl+='<path d="'+path+'" style="fill:'+fill+'"'+(r.f.src?'':' class="nof"')+'><title>'+esc(tt)+'</title></path>';
+    a0=a1;
+  });
+  var pie='<svg class="mixpie" viewBox="0 0 '+(2*C)+' '+(2*C)+'" role="img" aria-label="Birthplaces of '+esc(P.get(view).name)+'’s '+esc(genLabel(g-1).toLowerCase())+'"><defs>'+defs+'</defs>'+sl+'</svg>';
+  var leg='<ul class="mixleg">'+rows.map(function(r){
+    return '<li><span class="mflag'+(r.f.src?'':' none')+'">'+(r.f.src?'<img src="'+r.f.src+'" alt="">':'?')+'</span><span class="mname">'+esc(r.f.label)+(r.f.sub?'<small>'+esc(r.f.sub)+'</small>':'')+'</span><span class="mfr">'+r.fr+'</span><span class="mpc">'+(r.pc>=1?r.pc.toFixed(1):r.pc.toPrecision(2))+'%</span></li>' }).join('')+'</ul>';
+  return '<div class="btnrow" style="align-items:center"><label class="note2" for="pl-gen">Generation</label><select id="pl-gen" class="mixsel">'+opts+'</select></div>'+
+    '<section><h3 class="sh3">Birthplaces of '+esc(P.get(view).name)+'’s '+esc(genLabel(g-1).toLowerCase())+'</h3>'+
+    '<div class="mixwrap">'+pie+leg+'</div>'+
+    '<p class="note2">Each of the '+tot.toLocaleString()+' places in this generation counts '+(tot>1?'1/'+tot.toLocaleString():'in full')+'. Where a line has no person or no birthplace that far back, it takes the birthplace of the nearest person below on that line who has one.</p></section>';
+}
+sheet.addEventListener('change',function(e){ if(e.target.id==='pl-gen'){ plGen=+e.target.value; placesSheet(); var s=sheet.querySelector('#pl-gen'); if(s) try{s.focus({preventScroll:true})}catch(_){} } });
+
 /* ----- places and migration ----- */
 function placeKey(pl,lvl){
   var t=String(pl||'').split(',').map(function(x){return x.trim()}).filter(Boolean);
@@ -273,7 +331,15 @@ function placeKey(pl,lvl){
   if(lvl==='region') return t.slice(-2).join(', ');
   return t.join(', ');
 }
+var plLvl='region';
 function placesSheet(lvl){
+  if(lvl) plLvl=lvl; else lvl=plLvl;
+  var tabs='<div class="seg pltabs" role="group" aria-label="Show"><button type="button" data-s="pl-tab" data-v="moves" aria-pressed="'+(plTab==='moves')+'">Migration</button><button type="button" data-s="pl-tab" data-v="mix" aria-pressed="'+(plTab==='mix')+'">Birthplace mix</button></div>';
+  if(plTab==='mix'){
+    openSheet('<div class="fwrap">'+sheetHead('Explore','Places and migration','Where '+first()+'’s ancestors were born, and where families moved')+'<div class="sbody">'+tabs+mixSheetBody()+
+      '</div><footer class="sf"><button class="btn" type="button" data-s="cancel">Close</button></footer></div>',null,true);
+    return;
+  }
   var ppl=DATA.filter(function(p){return p.ref==null});
   var byGen={};
   ppl.forEach(function(p){ if(!p.bp) return; var g=dep(p.n), k=placeKey(p.bp,lvl); (byGen[g]=byGen[g]||{})[k]=(byGen[g][k]||0)+1 });
@@ -290,7 +356,7 @@ function placesSheet(lvl){
     return '<div class="flow"><span class="fr">'+esc(f.from)+' → '+esc(f.to)+'</span><span class="mute">'+f.n+' '+(f.n===1?'person':'people')+(f.y0<9999?' · born '+(f.y0===f.y1?f.y0:f.y0+'–'+f.y1):'')+'</span><span class="who2">'+esc(f.who.join(', '))+(f.n>f.who.length?' and '+(f.n-f.who.length)+' more':'')+'</span></div>' }).join(''):'<p class="note2">None found at this level. Try a more detailed grouping, or add more birthplaces.</p>' };
   var gens=Object.keys(byGen).map(Number).sort(function(a,b){return a-b});
   var seg=function(v,l){return '<button type="button" data-s="pl-lvl" data-v="'+v+'" aria-pressed="'+(lvl===v)+'">'+l+'</button>'};
-  var h='<div class="fwrap">'+sheetHead('Explore','Places and migration','Where '+first()+'’s ancestors were born, and where families moved')+'<div class="sbody">'+
+  var h='<div class="fwrap">'+sheetHead('Explore','Places and migration','Where '+first()+'’s ancestors were born, and where families moved')+'<div class="sbody">'+tabs+
     '<div class="btnrow" style="align-items:center"><span class="note2">Group places by</span><div class="seg" role="group" aria-label="Group places by">'+seg('country','Country')+seg('region','State or region')+seg('town','Town')+'</div></div>'+
     '<section><h3 class="sh3">Moves from parent to child</h3><p class="note2">A parent born in one place with a child born somewhere else, earliest first.</p>'+flowHTML(list(flows))+'</section>'+
     '<section><h3 class="sh3">Moves during a lifetime</h3><p class="note2">People who died somewhere other than where they were born.</p>'+flowHTML(list(life))+'</section>'+
@@ -310,6 +376,7 @@ var HISTEV=[[1066,0,'Norman conquest of England'],[1215,0,'Magna Carta'],[1337,1
   [1642,1651,'English Civil War'],[1754,1763,'French and Indian War'],[1775,1783,'American Revolution'],[1789,1799,'French Revolution'],[1812,1815,'War of 1812'],
   [1845,1852,'Irish Famine'],[1861,1865,'U.S. Civil War'],[1892,1954,'Ellis Island open'],[1914,1918,'World War I'],[1918,1920,'Influenza pandemic'],[1929,1939,'Great Depression'],
   [1939,1945,'World War II'],[1950,1953,'Korean War'],[1955,1975,'Vietnam War'],[1969,0,'Moon landing'],[1989,0,'Berlin Wall falls'],[2001,0,'September 11 attacks']];
+var tlOrder='gen'; try{ tlOrder=localStorage.getItem('pedigree-builder-timeline-order')||'gen' }catch(_){}
 function timelineSheet(){
   var now=new Date().getFullYear(), hidden=0;
   var ppl=[];
@@ -317,43 +384,86 @@ function timelineSheet(){
     if(p.l&&!STATE.showLiving){ hidden++; return }
     if(!p.b&&!p.d) return; ppl.push(p) });
   ppl.sort(function(a,b){return dep(a.n)-dep(b.n)||(a.b||a.d||0)-(b.b||b.d||0)});
+  /* "Family order": everyone sits between their parents, father's side above and mother's side below (as on the chart,
+     so "Show mother above father" is followed); people drawn only as guests come last */
+  if(tlOrder==='family'){
+    var inl=new Set(ppl.map(function(p){return p.n})), seenF=new Set(), fam=[];
+    (function walk(n){
+      if(!P.has(n)) return; var c=canonOf(n); if(seenF.has(c)) return; seenF.add(c);
+      var p=P.get(c), two=p.mf?[mo(c),fa(c)]:[fa(c),mo(c)];
+      walk(two[0]); if(inl.has(c)) fam.push(p); walk(two[1]);
+    })(view);
+    ppl.forEach(function(p){ if(!seenF.has(p.n)) fam.push(p) });
+    ppl=fam;
+  }
   var h0='<div class="fwrap">'+sheetHead('Explore','Timeline','Lifespans of the people in the current view, against history')+'<div class="sbody">';
   if(!ppl.length){ openSheet(h0+'<p class="note2"><b>No dates to show.</b> Add birth or death years, or raise Generations.</p></div><footer class="sf"><button class="btn" type="button" data-s="cancel">Close</button></footer></div>',null,true); return }
   var span=function(p){ var a=p.b||(p.d-60), z=p.d||(p.l?now:(p.b+60)); return [a,z] };
   var y0=Infinity, y1=-Infinity; ppl.forEach(function(p){ var s2=span(p); y0=Math.min(y0,s2[0]); y1=Math.max(y1,s2[1]) });
   var st=(y1-y0)>400?50:(y1-y0)>150?25:10;
   y0=Math.floor((y0-3)/st)*st; y1=Math.min(now+5,Math.ceil((y1+3)/st)*st);
-  var W=980, LW=230, RH=17, HT=72, top=HT+20, H=top+ppl.length*RH+12;
+  /* drawn at the panel's real width (it can be widened by dragging its left edge), so text stays the same size and
+     nothing scrolls sideways: the panel is opened first, then the chart is measured to fit it */
+  var note='<p class="note2">Showing the '+ppl.length+' people in the current chart view'+(hidden?' ('+hidden+' living '+(hidden===1?'person':'people')+' hidden, because birth years of living people are switched off)':'')+'. Raise Generations to include more. Faded bars have uncertain or missing dates; dots are events. Purple marks are historical events; short ones are shaded down the chart, long ones are a line along the top.</p>';
+  var ord='<div class="btnrow" style="align-items:center"><span class="note2">Order</span><div class="seg" role="group" aria-label="Order of the people">'+
+    '<button type="button" data-s="tl-ord" data-v="gen" aria-pressed="'+(tlOrder!=='family')+'">By generation</button>'+
+    '<button type="button" data-s="tl-ord" data-v="family" aria-pressed="'+(tlOrder==='family')+'">Between their parents</button></div></div>';
+  openSheet(h0+note+ord+'<div class="tlwrap" id="tlwrap"></div></div><footer class="sf"><button class="btn" type="button" data-s="cancel">Close</button></footer></div>',null,true);
+  var wrap=sheet.querySelector('#tlwrap');
+  var W=Math.max(300,Math.floor(wrap.clientWidth)||760), LW=Math.min(230,Math.round(W*.3)), RH=17, NM=Math.max(10,Math.floor((LW-12)/6.6));
+  /* year marks at least 36 pixels apart, so they never run into each other on a narrow screen */
+  [10,25,50,100,200,250,500,1000].some(function(s2){ st=Math.max(st,s2); return s2/(y1-y0)*(W-LW-14)>=36 });
+  y0=Math.floor(y0/st)*st; y1=Math.min(now+5,Math.ceil(y1/st)*st);
   var X=function(y){ return LW+(y-y0)/(y1-y0)*(W-LW-14) };
-  var g='<svg class="tl" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Timeline of '+ppl.length+' lifespans">';
-  for(var y=y0;y<=y1;y+=st){ g+='<line x1="'+X(y)+'" x2="'+X(y)+'" y1="'+(HT+6)+'" y2="'+H+'" style="stroke:var(--rule-soft)"/><text x="'+X(y)+'" y="'+(HT+16)+'" text-anchor="middle" font-size="10" style="fill:var(--muted)">'+yStr(y)+'</text>' }
-  /* labels go in the first of four rows where they do not overlap the one before */
-  var laneEnd=[-1e9,-1e9,-1e9,-1e9];
+  /* each label goes in the first row where it overlaps no other label and no other event's line, and where its own line,
+     which runs down from it to the axis, crosses no label below it (labels near the right edge read leftwards) */
+  var lanes=[], evs=[];
   HISTEV.slice().sort(function(a,b){return a[0]-b[0]}).forEach(function(e){
     var a=e[0], b=e[1]||e[0]; if(b<y0||a>y1) return;
-    var xa=X(Math.max(a,y0)), xb=X(Math.min(b,y1)), wd=e[2].length*5.6+8, ln=-1;
-    for(var i=0;i<4;i++) if(laneEnd[i]<xa){ ln=i; break }
-    if(ln<0) return;
-    laneEnd[ln]=xa+wd;
-    var ly=13+ln*15, long=b-a>20;
-    g+='<g><title>'+esc(e[2])+(e[1]?' ('+a+'–'+b+')':' ('+a+')')+'</title>'+
-      (long?'<line x1="'+xa+'" x2="'+xb+'" y1="'+(HT+21)+'" y2="'+(HT+21)+'" style="stroke:var(--star);stroke-width:3;opacity:.5"/>'
-           :'<rect x="'+xa+'" y="'+(HT+20)+'" width="'+Math.max(1.5,xb-xa)+'" height="'+(H-HT-28)+'" style="fill:var(--star);opacity:.08"/>')+
-      '<line x1="'+xa+'" x2="'+xa+'" y1="'+(ly+3)+'" y2="'+(HT+20)+'" style="stroke:var(--star);opacity:.5"/>'+
-      (xa+wd>W-4?'<text x="'+(xa-3)+'" y="'+ly+'" text-anchor="end"':'<text x="'+(xa+3)+'" y="'+ly+'"')+' font-size="10.5" style="fill:var(--star)">'+esc(e[2])+'</text></g>';
+    var xa=X(Math.max(a,y0)), xb=X(Math.min(b,y1)), wd=e[2].length*5.9+8, right=xa+wd>W-4;
+    var l0=right?xa-wd:xa, l1=right?xa:xa+wd, ln=0;
+    var clash=function(L,lines){
+      return evs.some(function(o){
+        if(o.ln===L&&l0<o.l1+4&&l1>o.l0-4) return true;
+        if(lines&&o.ln<L&&o.xa>l0-3&&o.xa<l1+3) return true;
+        if(lines&&o.ln>L&&xa>o.l0-3&&xa<o.l1+3) return true;
+        return false });
+    };
+    while(ln<=lanes.length&&clash(ln,true)) ln++;
+    /* two events too close together for that: settle for a row where only a line crosses */
+    if(ln>lanes.length){ ln=0; while(clash(ln,false)) ln++ }
+    (lanes[ln]=lanes[ln]||[]).push([l0,l1]);
+    evs.push({e:e,a:a,b:b,xa:xa,xb:xb,ln:ln,right:right,l0:l0,l1:l1});
   });
+  /* two pictures sharing one set of coordinates: the years and events (HB high) stay at the top of the panel while
+     the lifespans below them scroll */
+  var HT=Math.max(72,lanes.length*15+12), HB=HT+26, top=HB+10, H=top+ppl.length*RH+4;
+  var hd='', bd='', lab='';
+  for(var y=y0;y<=y1;y+=st){
+    hd+='<line x1="'+X(y)+'" x2="'+X(y)+'" y1="'+(HT+6)+'" y2="'+HB+'" style="stroke:var(--rule-soft)"/><text x="'+X(y)+'" y="'+(HT+16)+'" text-anchor="middle" font-size="10" style="fill:var(--muted)">'+yStr(y)+'</text>';
+    bd+='<line x1="'+X(y)+'" x2="'+X(y)+'" y1="'+HB+'" y2="'+H+'" style="stroke:var(--rule-soft)"/>';
+  }
+  evs.forEach(function(v){
+    var e=v.e, a=v.a, b=v.b, xa=v.xa, xb=v.xb, ln=v.ln;
+    var ly=13+ln*15, long=b-a>20, tt='<title>'+esc(e[2])+(e[1]?' ('+a+'–'+b+')':' ('+a+')')+'</title>';
+    hd+='<g>'+tt+(long?'<line x1="'+xa+'" x2="'+xb+'" y1="'+(HT+22)+'" y2="'+(HT+22)+'" style="stroke:var(--star);stroke-width:3;opacity:.5"/>':'')+
+      '<line x1="'+xa+'" x2="'+xa+'" y1="'+(ly+3)+'" y2="'+(long?HT+22:HB)+'" style="stroke:var(--star);opacity:.5"/></g>';
+    if(!long) bd+='<rect x="'+xa+'" y="'+HB+'" width="'+Math.max(1.5,xb-xa)+'" height="'+(H-HB)+'" style="fill:var(--star);opacity:.08"><title>'+esc(e[2])+' ('+a+(e[1]?'–'+b:'')+')</title></rect>';
+    /* the labels go on top of every line, edged in the panel colour so a line passing behind does not cut through them */
+    lab+='<g>'+tt+(v.right?'<text x="'+(xa-3)+'" y="'+ly+'" text-anchor="end"':'<text x="'+(xa+3)+'" y="'+ly+'"')+' font-size="10.5" class="tlev">'+esc(e[2])+'</text></g>';
+  });
+  hd+=lab;
   ppl.forEach(function(p,i){
     var yy=top+i*RH, s2=span(p), col=lc(p.n), xa=X(s2[0]), xb=X(s2[1]);
-    var lab=p.name.length>32?p.name.slice(0,31)+'…':p.name;
-    g+='<g><title>'+esc(p.name+', '+years(p)+' · '+(p.n===1?'Root':relTo(p.n)))+'</title>'+
-      '<text x="'+(LW-8)+'" y="'+(yy+4)+'" text-anchor="end" font-size="11.5" style="fill:var(--fg)">'+esc(lab)+'</text>';
+    var nm=p.name.length>NM?p.name.slice(0,NM-1)+'…':p.name;
+    bd+='<g><title>'+esc(p.name+', '+years(p)+' · '+(p.n===1?'Root':relTo(p.n)))+'</title>'+
+      '<text x="'+(LW-8)+'" y="'+(yy+4)+'" text-anchor="end" font-size="11.5" style="fill:var(--fg)">'+esc(nm)+'</text>';
     var sure0=!!p.b&&!p.bq, sure1=(!!p.d&&!p.dq)||(p.l&&!!p.b);
-    g+='<rect x="'+xa+'" y="'+(yy-4)+'" width="'+Math.max(2,xb-xa)+'" height="8" rx="4" style="fill:'+col+';opacity:'+(sure0&&sure1?'.9':'.45')+'"/>';
-    if(!p.d&&!p.l) g+='<line x1="'+(xb-30)+'" x2="'+xb+'" y1="'+yy+'" y2="'+yy+'" stroke-dasharray="3 3" style="stroke:var(--surface);stroke-width:3"/>';
-    (p.ev||[]).forEach(function(e){ if(!e.y||e.y<y0||e.y>y1) return; g+='<circle cx="'+X(e.y)+'" cy="'+yy+'" r="3" style="fill:var(--fg);stroke:var(--surface);stroke-width:1.2"><title>'+esc((EVT[e.t]||'Event')+(e.date?', '+e.date:'')+(e.pl?', '+e.pl:''))+'</title></circle>' });
-    g+='</g>';
+    bd+='<rect x="'+xa+'" y="'+(yy-4)+'" width="'+Math.max(2,xb-xa)+'" height="8" rx="4" style="fill:'+col+';opacity:'+(sure0&&sure1?'.9':'.45')+'"/>';
+    if(!p.d&&!p.l) bd+='<line x1="'+(xb-30)+'" x2="'+xb+'" y1="'+yy+'" y2="'+yy+'" stroke-dasharray="3 3" style="stroke:var(--surface);stroke-width:3"/>';
+    (p.ev||[]).forEach(function(e){ if(!e.y||e.y<y0||e.y>y1) return; bd+='<circle cx="'+X(e.y)+'" cy="'+yy+'" r="3" style="fill:var(--fg);stroke:var(--surface);stroke-width:1.2"><title>'+esc((EVT[e.t]||'Event')+(e.date?', '+e.date:'')+(e.pl?', '+e.pl:''))+'</title></circle>' });
+    bd+='</g>';
   });
-  g+='</svg>';
-  openSheet(h0+'<p class="note2">Showing the '+ppl.length+' people in the current chart view'+(hidden?' ('+hidden+' living '+(hidden===1?'person':'people')+' hidden, because birth years of living people are switched off)':'')+'. Raise Generations to include more. Faded bars have uncertain or missing dates; dots are events. Purple marks are historical events; short ones are shaded down the chart, long ones are a line along the top.</p>'+
-    '<div class="tscroll">'+g+'</div></div><footer class="sf"><button class="btn" type="button" data-s="cancel">Close</button></footer></div>',null,true);
+  wrap.innerHTML='<div class="tlhead"><svg class="tl" width="'+W+'" height="'+HB+'" viewBox="0 0 '+W+' '+HB+'" role="img" aria-label="Years and historical events">'+hd+'</svg></div>'+
+    '<svg class="tl" width="'+W+'" height="'+(H-HB)+'" viewBox="0 '+HB+' '+W+' '+(H-HB)+'" role="img" aria-label="Timeline of '+ppl.length+' lifespans">'+bd+'</svg>';
 }

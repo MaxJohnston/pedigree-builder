@@ -76,7 +76,7 @@ Already have a tree in another program? Export it from there as a **GEDCOM (.ged
 - **Find a person:** search by name, place or year and jump to them, including famous relatives.
 - **Relationship calculator** for any two people in the tree.
 - **Tree report:** completeness by generation and a list of brick walls (ancestors whose parents are not yet recorded).
-- **Places and migration:** birthplaces by generation and moves from parent to child.
+- **Places and migration:** birthplaces by generation, moves from parent to child, and a flag pie chart of where each generation was born.
 - **Timeline** of lifespans set against historical events.
 - **Undo, redo and an edit history** for the current session.
 - **GEDCOM 5.5.1 import and export** for other genealogy programs.
@@ -278,7 +278,8 @@ Open **Explore** in the toolbar.
   - *Completeness by generation:* how many places in each generation are filled, out of how many possible, and how many different people that is (fewer when someone appears twice).
   - *Brick walls:* everyone whose father or mother is not recorded, closest generations first, with the share of your ancestry missing behind them. **Add father** and **Add mother** buttons open the form straight away.
 - **Places and migration:** moves from parent to child, moves within a lifetime (born in one place, died in another), and birthplaces by generation. Group places by **country**, **state or region**, or **town**. Places are grouped by how they are written, so write them consistently.
-- **Timeline:** a bar for each person in the current chart view, coloured by grandparent line and set against historical events. Faded bars have uncertain or missing dates. Raise **Generations** to include more people. Living people are hidden unless their birth years are shown (see View options).
+  - **Birthplace mix** tab: pick a generation and see a pie chart, with each slice filled with its flag, of where the people in that generation were born, with exact fractions (1/8, 3/32) and percentages. Every place in the generation counts equally. When a line has no person or no birthplace that far back, it takes the birthplace of the nearest person below on that line who has one, so a line that stops early still counts in full. It is drawn for the person whose tree is on screen.
+- **Timeline:** a bar for each person in the current chart view, coloured by grandparent line and set against historical events. Faded bars have uncertain or missing dates. Raise **Generations** to include more people. Living people are hidden unless their birth years are shown (see View options). **Order** lists people by generation, or **Between their parents**, where each person sits between their father's side above and their mother's side below, as on the chart. Event labels are stacked so none overlap, the chart always fits the panel's width, and the years and events stay at the top while you scroll through the people (on a phone they scroll away to leave room). On a desktop, drag the left edge of any Explore panel to make it wider; the timeline is drawn again across the extra width, and the width is remembered in this browser.
 
 **Find a person:** type in the **Find a person** box at the left of the toolbar. Matching names, places and years appear as you type. Choose one to jump to them; the chart adds generations or switches back to the root's tree if needed. Famous relatives are listed too (marked *Famous relative*): choosing one turns on **★ Famous relatives** and draws their line of descent on the chart.
 
