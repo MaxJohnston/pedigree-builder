@@ -161,10 +161,13 @@ select{padding:0 8px}
   .czp{flex:0 0 340px;width:340px;max-height:none}
   .czl{grid-template-columns:1fr}
 }
+/* Phone: the page scrolls, so scrolling down past the header lets the chart fill the whole screen.
+   Scrolling the chart past its top or bottom edge carries on into the page. */
 @media (max-width:640px){
-  body.cz-on{height:auto;min-height:100%}
-  body.cz-on .stage{flex:none;height:calc(100vh - 28px);height:calc(100dvh - 28px);min-height:340px}
-  body.cz-on .viewport{overscroll-behavior:auto}
+  html,body{height:auto}
+  body{min-height:100%}
+  .stage{flex:none;height:calc(100vh - 28px);height:calc(100dvh - 28px);min-height:340px}
+  .viewport{overscroll-behavior:auto}
 }
 .czi{display:block;width:100%;text-align:left;background:transparent;border:0;border-radius:6px;padding:6px 40px 6px 8px;color:var(--fg);font:inherit;cursor:pointer}
 .czi:hover,.czi[aria-pressed="true"]{background:var(--band)}
