@@ -484,7 +484,13 @@ function render(keep){
       var x1=xOf(nd.d)+CW, y1=cy(nd), x2=xOf(k.d), y2=cy(k)+entry(nd,k), xm=x1+(XEX[nd.d+1]||0)+nd.trunk;
       var on=czEdges.has(nd.n+'>'+k.n);
       var dd='M'+x1+' '+y1+'H'+xm+'V'+y2+'H'+x2;
-      if(k.d>nd.d+1){
+      if(k.around){
+        /* a haplogroup after a flag card: from the person, round the flag card (above it for Y-DNA, below for mtDNA, each
+           kept to its own side of the gap so two such lines between neighbouring flags do not overlap) */
+        var fa0=k.around, yr=k.hap.type==='y'?topOf(fa0)-3:topOf(fa0)+CH+3;
+        dd='M'+x1+' '+y1+'H'+xm+'V'+yr+'H'+(x2-GAP/2)+'V'+y2+'H'+x2;
+      }
+      else if(k.d>nd.d+1){
         /* across the columns in between, then into the fork of the parent's nearer child, sharing its last stretch */
         var so=nd.soloOf&&nd.soloOf[k.n], sb=joins(nd,k), o=so||(sb&&sb.trunk!=null?sb:null);
         var xb=o?xOf(o.d)+CW+(XEX[o.d+1]||0)+o.trunk:x2-GAP+5, yb=o?cy(k)+entry(so?nd:o,k):y2;
@@ -744,27 +750,34 @@ function insertRow(nodes,nd,py){
   }
   nd.y=Y; nodes.push(nd);
 }
-/* Haplogroup nodes: one after the last known person of the father line (Y-DNA) and of the mother line (mtDNA). */
+/* Haplogroup nodes: one after the last known person of the father line (Y-DNA) and of the mother line (mtDNA). When that
+   person is beyond the generations shown, the card goes after the furthest person of the line that is shown, and when
+   that person has a birthplace flag card, after the flag, with its line still coming from the person and running round
+   the flag card. */
 function addHaplo(nodes,seen){
   HAPLO.forEach(function(h,i){
-    var en=seen.get(h.end); if(!en) return;
-    var nd={n:-(9001+i), d:en.d+1, hap:h, kids:[], p:{name:h.code}, color:'var(--'+(h.type==='y'?'hy':'hm')+')', cls:h.type==='y'?'hl-y':'hl-m'};
+    var en=null;
+    for(var c=h.chain.length-1;c>=0&&!en;c--) en=seen.get(h.chain[c])||null;
+    if(!en) return;
+    var fl=en.kids.filter(function(k){return k.flag})[0]||null, an=fl||en;
+    en.more=false;
+    var nd={n:-(9001+i), d:an.d+1, around:fl, hap:h, kids:[], p:{name:h.code}, color:'var(--'+(h.type==='y'?'hy':'hm')+')', cls:h.type==='y'?'hl-y':'hl-m'};
     /* choose the gap in the column where the new connector crosses the fewest others, then the nearest one */
     var col=nodes.filter(function(x){return x.d===nd.d}).sort(function(a,b){return a.y-b.y});
-    var src=nodes.filter(function(x){return x.d===en.d&&x!==en});
+    var src=nodes.filter(function(x){return x.d===an.d&&x!==an});
     var bestS=null;
     for(var q=0;q<=col.length;q++){
       var pv=q?col[q-1]:null, at=q<col.length?col[q]:null;
       var yq=pv&&at?(pv.y+at.y)/2:pv?pv.y+1:at?Math.max(0,at.y-1):0, cr=0;
       src.forEach(function(x){ x.kids.forEach(function(k){
         var ik=col.indexOf(k); if(ik<0) return;
-        var a=en.y<x.y?-1:1, b=q<=ik?-1:1; if(a!==b) cr++;
+        var a=an.y<x.y?-1:1, b=q<=ik?-1:1; if(a!==b) cr++;
       }) });
-      var cst=cr*1000+Math.abs(yq-en.y)*0.02;
+      var cst=cr*1000+Math.abs(yq-an.y)*0.02;
       if(!bestS||cst<bestS.c-1e-9) bestS={c:cst,pv:pv,at:at};
     }
     var lo=bestS.pv?bestS.pv.y+1:0, hi=bestS.at?bestS.at.y-1:1e9;
-    var Yh=lo<=hi?Math.max(lo,Math.min(hi,en.y)):lo;
+    var Yh=lo<=hi?Math.max(lo,Math.min(hi,an.y)):lo;
     var sh=bestS.at&&bestS.at.y-Yh<1-1e-9?Yh+1-bestS.at.y:0;
     if(sh) nodes.forEach(function(x){ if(x.y>=bestS.at.y-1e-9) x.y+=sh });
     nd.y=Yh; nodes.push(nd);
