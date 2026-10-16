@@ -138,6 +138,8 @@ function editPerson(n,isNew,child){
     lay='<fieldset><legend>Chart layout</legend>'+
       '<label class="chk" for="f-mf"><input type="checkbox" id="f-mf" name="mf"'+(p.mf?' checked':'')+'> Show mother above father</label>'+
       '<p class="note2">Swaps the order of this person’s parents in the chart. Useful when it untangles crossing lines.</p>'+
+      '<label class="chk" for="f-pflag"><input type="checkbox" id="f-pflag" name="pflag"'+(p.pflag?' checked':'')+'> Show birthplace flag instead of parents</label>'+
+      '<p class="note2">Hides this person’s parents and the lines to them, and shows one card with the flag of the US state or country in their birthplace instead. Their own tree still shows their parents.</p>'+
       lf('fa','Father')+lf('mo','Mother')+
     '</fieldset>';
   }
@@ -239,6 +241,7 @@ function editPerson(n,isNew,child){
     if(form.elements.sex&&form.elements.sex.value!=='U') o.sex=form.elements.sex.value;
     if(!isNew){
       if(form.elements.mf.checked) o.mf=1; else delete o.mf;
+      if(form.elements.pflag.checked) o.pflag=1; else delete o.pflag;
       if(form.elements.unfa&&form.elements.unfa.checked) delete o.fa;
       if(form.elements.unmo&&form.elements.unmo.checked) delete o.mo;
     }
@@ -378,6 +381,7 @@ function diffText(a,b,ph){
   if(JSON.stringify((a.ev||[]).map(function(e){return [e.t,e.date,e.pl,e.tx]}))!==JSON.stringify((b.ev||[]).map(function(e){return [e.t,e.date,e.pl,e.tx]}))) out.push('events');
   if(JSON.stringify((a.src||[]).map(function(e){return [e.f,e.ti,e.url]}))!==JSON.stringify((b.src||[]).map(function(e){return [e.f,e.ti,e.url]}))) out.push('sources');
   if(!!a.mf!==!!b.mf) out.push('parent order');
+  if(!!a.pflag!==!!b.pflag) out.push(b.pflag?'birthplace flag shown':'birthplace flag hidden');
   if(ph) out.push('photo');
   if(!out.length) return '';
   return ': '+out.slice(0,3).join('; ')+(out.length>3?' and '+(out.length-3)+' more':'');

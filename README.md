@@ -206,6 +206,14 @@ Here, Prince Albert's father, Ernest I, sits next to his sister, Queen Victoria'
 
 It is also ticked on **Ernest II of Saxe-Gotha-Altenburg**, further back. His son Frederick III is drawn below his mother, Luise Dorothea, which brings Frederick III closer to Augusta of Saxe-Gotha, the other child of the couple they share.
 
+### Show birthplace flag instead of parents
+
+Some lines stop being interesting at an immigrant ancestor, or simply run too wide. Tick **Show birthplace flag instead of parents** under **Chart layout** on a person's record, and their parents and the lines to them are hidden. In their place the chart shows one card with the flag of the US state or country they were born in, read from their **Born in** field.
+
+The last part of the place is read first: "Xenia, Greene, Ohio, USA" shows Ohio's flag, "Hull, Yorkshire, England" shows England's, and "Bavaria, Germany" shows Germany's. Common older names work too, such as Prussia, Bohemia, Holland or "British Colonial America". When no flag matches, or no birthplace is recorded, a dashed card with a question mark says so. To show flags for every line that runs out, use **View > Show birthplace flags at the end of each line** instead. Viewing that person's own tree still shows their parents, and a read-only copy of the page carries only the flags its tree uses.
+
+Country flags come from [country-flag-icons](https://gitlab.com/catamphetamine/country-flag-icons) (MIT License) and US state flags from [us-state-flags](https://www.npmjs.com/package/us-state-flags) (ISC License).
+
 ### Try it yourself
 
 - **Explore → Relationship calculator:** Prince Albert and Queen Victoria are first cousins, and Edward VII is a 3rd great-grandson of Frederick III.
@@ -282,6 +290,7 @@ Open **View** in the toolbar:
 
 - **Show birth years of living people:** off by default, so living people show only *Living*. Turn it on to show their birth year.
 - **Show photos on cards.**
+- **Show birthplace flags at the end of each line:** for everyone whose parents are not recorded but whose **Born in** field is, the chart adds a card with the flag of that US state or country where their parents would be. People with no birthplace get no flag. A place that matches no flag shows a dashed card with a question mark. The flags are hidden in edit mode, where those places hold the add-parent cards, and a flag needs a free column, so the furthest generation shown has none.
 - **Names on the chart:** birth names, or married names for anyone who has one.
 - **Draw linked ancestors once, with long lines instead of repeat cards:** shown only when the current view has dashed repeat cards. When ticked, every linked ancestor is drawn once, in the further generation, and the long line from the nearer child runs straight out from that child, then joins the line of its brother or sister next to the parents. Lines cross more, but nobody appears twice.
 - **Save as read-only web page (HTML):** saves the whole app and your tree as one .html file, opening at the generations and person you are viewing. Anyone can open it in a browser, with no install, and look around (zoom, details, famous relatives, Explore), but there is no Edit button and nothing they do is saved. The file holds only the code for viewing: edit mode, the forms, undo, saving, import and export, GEDCOM and the sample trees are left out, so it is much smaller than the app. It does not touch the tree saved in their own browser. This works in the single-file version (`pedigree-builder.html` from Releases) and when the page is served from a web server such as GitHub Pages; the split-file version opened by double-clicking `index.html` cannot read its own files, so it explains this instead.
@@ -458,7 +467,7 @@ Top-level fields:
 | `haplo` | Haplogroups: `type` (`y` or `mt`), `from` (person number), `code`, optional `url`, `line` and `to` (the last person the line reaches). |
 | `dna` | DNA confirmations: `type` (`self`, `yt`, `mtt`, `match`, `y` or `mt`), `anchor` (person number) and `src`. |
 | `photos` | Photos as small JPEG data URLs, keyed by person number. |
-| `showLiving`, `nameView`, `hidePhotos`, `oneCard` | View settings. |
+| `showLiving`, `nameView`, `hidePhotos`, `oneCard`, `endFlags` | View settings. |
 | `sample` | `true` for the built-in sample tree. |
 
 Person fields (only the ones that are filled in are written):
@@ -479,6 +488,7 @@ Person fields (only the ones that are filled in are written):
 | `fa`, `mo` | Links to a father or mother who is already elsewhere in the tree, in any generation (pedigree collapse). |
 | `ref` | Older files only: a stored repeat of person `ref`. It is turned into a link when the file is loaded, because the chart now draws repeat cards by itself. |
 | `mf` | `1` draws the mother above the father. |
+| `pflag` | `1` shows one card with the flag of the birthplace (`bp`) in place of this person's parents. |
 
 ### Ahnentafel numbers
 
@@ -507,6 +517,7 @@ Pedigree Builder is plain HTML, CSS and JavaScript, with no framework, no depend
 ```text
 index.html              The page: toolbar, chart area and panels
 css/styles.css          All styles, including light and dark themes
+js/flags.js             Flag pictures for countries and US states (birthplace flag option)
 js/sample-data.js       The three sample trees: the invented Whitakers, Edward VII's ancestry and Jon Snow's fictional ancestry
 js/core.js              Shared state (STATE) and helpers: rebuild(), names, dates, grandparent lines
 js/chart.js             Chart layout and drawing, zoom and pan, famous-relative lines, details panel, navigation

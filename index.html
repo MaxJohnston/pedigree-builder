@@ -30,6 +30,7 @@
       <div class="menu" id="viewmenu" role="group" aria-label="View options" hidden>
         <label class="chk" for="showliv"><input type="checkbox" id="showliv"> Show birth years of living people</label>
         <label class="chk" for="showph"><input type="checkbox" id="showph"> Show photos on cards</label>
+        <label class="chk" for="endflags" title="For everyone whose parents are not recorded and whose birthplace is"><input type="checkbox" id="endflags"> Show birthplace flags at the end of each line</label>
         <label class="chk" for="onecard" id="onecardrow" hidden title="When a linked ancestor's line would cross several others"><input type="checkbox" id="onecard"> Draw linked ancestors once, with long lines instead of repeat cards</label>
         <fieldset class="mfs"><legend>Names on the chart</legend>
           <label class="chk"><input type="radio" name="nameview" value="birth"> Birth names</label>
@@ -84,6 +85,7 @@
 <div class="scrim" id="scrim" hidden></div>
 <aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t" hidden></aside>
 
+<script src="js/flags.js" data-pb></script>
 <script src="js/sample-data.js" data-pb></script>
 <script src="js/core.js" data-pb></script>
 <script src="js/chart.js" data-pb></script>

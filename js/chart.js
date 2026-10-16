@@ -4,6 +4,72 @@
 'use strict';
 
 /* ---------- render ---------- */
+/* ---------- birthplace flags ----------
+   "Show birthplace flag instead of parents" (pflag on a person) draws one card with the flag of the US state or country
+   in their birthplace where their parents would be. The place is read from the end: "Dayton, Ohio, USA" gives Ohio,
+   "Lucca, Tuscany, Italy" gives Italy. The pictures are in FLAGS (js/flags.js). */
+var US_ST={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',DC:'Washington, D.C.',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming'};
+var FLAG_ALIAS={
+  'US':'usa|us|united states|united states of america|america|british america|british colonial america|colonial america|british north america',
+  'GB':'uk|united kingdom|great britain|britain|united kingdom of great britain and ireland',
+  'GB-ENG':'england|kingdom of england','GB-SCT':'scotland|kingdom of scotland','GB-WLS':'wales','GB-NIR':'northern ireland|ulster',
+  'IE':'ireland|eire|irish free state|kingdom of ireland','NL':'holland|netherlands|the netherlands|dutch republic',
+  'DE':'germany|prussia|bavaria|saxony|hesse|hessen|wurttemberg|baden|hanover|hannover|westphalia|rhineland|palatinate|pfalz|mecklenburg|holy roman empire|german empire',
+  'CZ':'czechia|czech republic|czechoslovakia|bohemia|moravia','AT':'austria|austria-hungary|austrian empire',
+  'RU':'russia|russian empire','IT':'italy|kingdom of italy|sicily|sardinia|tuscany|piedmont|lombardy|venice|naples|papal states',
+  'FR':'france|kingdom of france|alsace|lorraine|normandy|brittany','ES':'spain|castile|castilla|aragon|leon|navarre',
+  'PT':'portugal','BE':'belgium|flanders','CH':'switzerland','SE':'sweden','NO':'norway','DK':'denmark','FI':'finland','PL':'poland|galicia',
+  'UA':'ukraine','LT':'lithuania','LV':'latvia','HU':'hungary','RO':'romania|wallachia|moldavia','HR':'croatia','MX':'mexico|new spain',
+  'CA':'canada|ontario|quebec|nova scotia|new brunswick|manitoba|british columbia|prince edward island|saskatchewan|alberta|newfoundland|newfoundland and labrador|upper canada|lower canada|new france|acadia',
+  'AU':'australia|new south wales|victoria, australia|queensland|tasmania','CN':'china','JP':'japan','IN':'india','KR':'korea|south korea'
+};
+var STATE_ALIAS={PA:'penn|penna|pennsylvania colony',MA:'mass|massachusetts bay',CT:'conn',TN:'tenn',VA:'virg',NY:'new york state',WA:'washington state',DC:'district of columbia|washington dc|washington d c'};
+var FLAGIX=null;
+var fnorm=function(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\([^)]*\)/g,' ').replace(/\./g,'').replace(/[^a-z0-9' -]+/g,' ').replace(/\s+/g,' ').trim() };
+function flagIndex(){
+  if(FLAGIX) return FLAGIX;
+  var C=new Map(), S=new Map(), add=function(m,k,v){ k=fnorm(k); if(k&&!m.has(k)) m.set(k,v) };
+  Object.keys(US_ST).forEach(function(k){ add(S,US_ST[k],k) });
+  Object.keys(STATE_ALIAS).forEach(function(k){ STATE_ALIAS[k].split('|').forEach(function(a){ add(S,a,k) }) });
+  Object.keys(FLAG_ALIAS).forEach(function(k){ FLAG_ALIAS[k].split('|').forEach(function(a){ add(C,a,k) }) });
+  var dn=null; try{ dn=new Intl.DisplayNames(['en'],{type:'region'}) }catch(_){}
+  if(dn&&typeof FLAGS!=='undefined') Object.keys(FLAGS).forEach(function(k){ if(/^[A-Z]{2}$/.test(k)){ try{ var nm=dn.of(k); if(nm&&nm!==k){ add(C,nm,k); add(C,nm.replace(/^the /i,''),k) } }catch(_){} } });
+  return (FLAGIX={C:C,S:S});
+}
+/* Strip "Colony of", "Province of", "Territory", "State of" so colonial and territorial names find the state. */
+var fcore=function(k){ return k.replace(/^(the )?(colony|province|state|commonwealth|territory|dominion|kingdom|grand duchy|duchy|republic) of /,'').replace(/ (colony|province|territory|state)$/,'').trim() };
+function flagCountryName(code){
+  if(code==='US') return 'United States'; if(code==='GB') return 'United Kingdom';
+  var o={'GB-ENG':'England','GB-SCT':'Scotland','GB-WLS':'Wales','GB-NIR':'Northern Ireland'}; if(o[code]) return o[code];
+  try{ return new Intl.DisplayNames(['en'],{type:'region'}).of(code)||code }catch(_){ return code }
+}
+/* -> {code, label, sub, src} ; code '' when no flag was found */
+function flagOf(place){
+  var X=flagIndex(), segs=String(place||'').split(',').map(function(s){return s.trim()}).filter(Boolean), us=false, found='';
+  var st=function(raw,last){ var k=fnorm(raw), c=fcore(k);
+    if(X.S.has(k)) return X.S.get(k); if(X.S.has(c)) return X.S.get(c);
+    var u=raw.replace(/\./g,'').trim().toUpperCase(); return (us||last)&&/^[A-Z]{2}$/.test(u)&&US_ST[u]?u:'' };
+  for(var i=segs.length-1;i>=0&&!found;i--){
+    var k=fnorm(segs[i]), c=fcore(k), cc=X.C.get(k)||X.C.get(c)||'';
+    if(cc==='US'){ us=true; continue }
+    var s=(us||i===segs.length-1)&&!(cc&&!X.S.has(k)&&!X.S.has(c))?st(segs[i],i===segs.length-1):'';
+    if(s) found='US-'+s; else if(cc) found=cc; else if(us) found='US';
+  }
+  if(!found&&us) found='US';
+  var has=typeof FLAGS!=='undefined'&&FLAGS[found];
+  if(found.indexOf('US-')===0) return {code:found, label:US_ST[found.slice(3)], sub:'United States', src:has?'data:image/webp;base64,'+FLAGS[found]:''};
+  if(found) return {code:found, label:flagCountryName(found), sub:'', src:has?'data:image/webp;base64,'+FLAGS[found]:''};
+  return {code:'', label:place?String(place).split(',').pop().trim():'Birthplace not recorded', sub:place?'No flag found for this place':'Add a birthplace to show a flag', src:''};
+}
+/* the flags the current tree uses, so a read-only copy carries only those */
+function usedFlags(){
+  var out={}; if(typeof FLAGS==='undefined') return out;
+  var endOf=function(p){ return STATE.endFlags&&p.ref==null&&p.bp&&!P.has(fa(p.n))&&!P.has(mo(p.n)) };
+  (STATE.people||[]).forEach(function(p){ if(!p.pflag&&!endOf(p)) return; var src=p; if(p.ref!=null){ var r=rawP(p.ref); if(r) src=r }
+    var f=flagOf(src.bp); if(f.code&&FLAGS[f.code]) out[f.code]=FLAGS[f.code] });
+  return out;
+}
+
 function render(keep){
   keepDepth();
   closeDetails(true);
@@ -17,12 +83,14 @@ function render(keep){
   function build(withAdd){
     nodes=[]; seen=new Map();
     var anc=new Set([view]), q=[view], nkid=new Map();
-    for(var i=0;i<q.length;i++){ var x=q[i]; if(P.get(x).ref!=null) continue;
+    /* "Show birthplace flag instead of parents": their parents are left out here (unless reached another way) */
+    var flagged=function(n){ var p=P.get(n); return !!(p&&p.pflag&&n!==view) };
+    for(var i=0;i<q.length;i++){ var x=q[i]; if(P.get(x).ref!=null||flagged(x)) continue;
       [fa(x),mo(x)].forEach(function(m){ if(!P.has(m)) return; nkid.set(m,(nkid.get(m)||0)+1); if(!anc.has(m)){ anc.add(m); q.push(m) } }); }
     /* children before parents, so each ancestor's column is settled from all of its children */
     var dOf=new Map([[view,0]]), ready=[view];
     while(ready.length){
-      var y=ready.shift(), dy=dOf.get(y); if(P.get(y).ref!=null) continue;
+      var y=ready.shift(), dy=dOf.get(y); if(P.get(y).ref!=null||flagged(y)) continue;
       [fa(y),mo(y)].forEach(function(m){ if(!P.has(m)) return;
         if(dy!=null&&dy+1<=D-1){ var c=dOf.get(m); dOf.set(m,c==null?dy+1:split.has(m)?Math.min(c,dy+1):Math.max(c,dy+1)) }
         nkid.set(m,nkid.get(m)-1); if(nkid.get(m)===0) ready.push(m);
@@ -33,6 +101,11 @@ function render(keep){
     (function visit(n){
       if(vis.has(n)) return; vis.add(n);
       var nd=seen.get(n), p=nd.p;
+      if(flagged(n)&&!p.ref){
+        /* one card with the flag of their birthplace, where the parents would be */
+        if(nd.d<D-1){ var fl={n:-(n+0.5),d:nd.d+1,p:{name:''},kids:[],owner:nd,flag:flagOf(p.bp),child:n,color:lc(n)}; nd.kids.push(fl); nodes.push(fl) }
+        nd.more=false; return;
+      }
       if(!p.ref) (p.mf?[mo(n),fa(n)]:[fa(n),mo(n)]).forEach(function(m){
         if(P.has(m)&&seen.has(m)&&nd.d<D-1){
           var pn=seen.get(m);
@@ -49,6 +122,11 @@ function render(keep){
 /*}edit*/
       });
       nd.more=(nd.d===D-1)&&(P.has(fa(n))||P.has(mo(n)));
+      /* View → "Show birthplace flags at the end of each line": someone with no parents recorded but a birthplace gets a
+         flag card where their parents would be (not in edit mode, where those places hold the "Add father/mother" cards) */
+      if(STATE.endFlags&&!withAdd&&!p.ref&&p.bp&&!P.has(fa(n))&&!P.has(mo(n))&&nd.d<D-1){
+        var ef={n:-(n+0.5),d:nd.d+1,p:{name:''},kids:[],owner:nd,flag:flagOf(p.bp),child:n,color:lc(n)}; nd.kids.push(ef); nodes.push(ef);
+      }
     })(view);
     rn=seen.get(view);
   }
@@ -393,7 +471,7 @@ function render(keep){
   /* The whole line from a child to both parents is drawn in one colour: the father's grandparent-line colour
      (the mother's when no father is drawn), so the fork does not change colour where it splits. */
   var forkCol=function(nd){
-    var ks=nd.kids.filter(function(k){return !k.add&&!k.hap&&k.n>0});
+    var ks=nd.kids.filter(function(k){return !k.add&&!k.hap&&!k.flag&&k.n>0});
     var f=ks.filter(function(k){return k.n===fa(nd.n)})[0]||ks.filter(function(k){return k.n%2===0})[0]||ks[0];
     return f?lc(f.n):null;
   };
@@ -424,6 +502,13 @@ function render(keep){
         '<span class="hglyph" aria-hidden="true">'+(isY?'Y':'mt')+'</span>'+
         '<span class="who"><span class="nm">'+esc(hp.code)+'</span><span class="yr">'+esc(hp.label)+'</span></span>'+
         '<span class="ico" aria-hidden="true">&#8599;</span></a>';
+      return;
+    }
+    if(nd.flag){
+      var fg=nd.flag, fcn=P.get(nd.child).name, ftt=(fg.code?'Born in '+fg.label+(fg.sub?', '+fg.sub:''):fg.sub)+' · '+fcn+(P.get(nd.child).bp?' was born in '+P.get(nd.child).bp:'');
+      h+='<div class="card flagc'+(fg.code?'':' noflag')+'" data-flag="'+nd.child+'" style="left:'+xOf(nd.d)+'px;top:'+topOf(nd)+'px" role="img" aria-label="'+esc(ftt)+'" title="'+esc(ftt)+'">'+
+        (fg.src?'<span class="flg"><img alt="" src="'+fg.src+'"></span>':'<span class="flg none" aria-hidden="true">?</span>')+
+        '<span class="who"><span class="nm">'+esc(fg.label)+'</span><span class="yr">'+esc(fg.code?'Birthplace'+(fg.sub?' · '+fg.sub:''):fg.sub)+'</span></span></div>';
       return;
     }
 /*{edit*/
@@ -469,7 +554,7 @@ function render(keep){
   $('#sub').innerHTML=isHome
     ? esc(years(rp))+(STATE.sample?' · <span class="samp">Sample tree</span>'+(READONLY?'':' Press Edit to make it your own.'):'')
     : esc(relAll(view))+' of '+esc(first())+' · '+esc(years(rp))+' · <a href="#p1" data-act="tree">Back to '+esc(first())+'’s tree</a>';
-  var real=nodes.filter(function(x){return !x.guest&&!x.hap&&!x.add&&!x.rep}), nReal=real.length;
+  var real=nodes.filter(function(x){return !x.guest&&!x.hap&&!x.add&&!x.rep&&!x.flag}), nReal=real.length;
   var filled=real.reduce(function(m,x){return Math.max(m,x.d+1)},1);
   $('#status').textContent=nReal+(nReal===1?' person':' people')+' shown · '+filled+' of '+D+' generations filled';
   applyCousins();

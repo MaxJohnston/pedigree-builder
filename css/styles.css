@@ -201,6 +201,12 @@ select{padding:0 8px}
 @keyframes refpulse{0%{box-shadow:0 0 0 0 var(--star)}100%{box-shadow:0 0 0 14px transparent}}
 @media (prefers-reduced-motion:reduce){.card.refhl{animation:none}}
 .card.famous{border-style:solid;box-shadow:0 0 0 1px var(--star)}
+.card.flagc{gap:10px;padding-left:9px;border-color:var(--rule);cursor:default}
+.card.flagc .flg{display:grid;place-items:center;flex:none;min-width:54px;height:36px}
+.card.flagc .flg img{display:block;height:36px;width:auto;max-width:72px;border-radius:2px;box-shadow:0 0 0 1px var(--rule-soft)}
+.card.flagc .flg.none{width:54px;border:1.5px dashed var(--rule);border-radius:3px;color:var(--muted);font:500 15px/1 var(--font-ui)}
+.card.flagc.noflag{border-style:dashed}
+.card.flagc .nm{font-size:15px}
 .card.guest .dot{background:var(--star)}
 .lines path.cz{stroke:var(--star);stroke-width:2.5}
 .sdot{color:var(--star)}

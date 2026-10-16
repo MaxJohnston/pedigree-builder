@@ -27,7 +27,11 @@ function chartSVG(){
     var cc=getComputedStyle(c), stroke=cc.borderTopColor||rule;
     var fill=root?fg:bg, tfill=root?bg:fg, mfill=root?bg:mu;
     o+='<rect x="'+L+'" y="'+T+'" width="'+CW+'" height="'+CH+'" rx="'+(hap?24:6)+'" fill="'+fill+'" stroke="'+stroke+'"'+(c.classList.contains('refcard')||c.classList.contains('guest')?' stroke-dasharray="4 3"':'')+'/>';
-    var tx=L+11, im=c.querySelector('img.av');
+    var tx=L+11, im=c.querySelector('img.av'), fim=c.querySelector('.flg img');
+    if(c.classList.contains('flagc')){ var fb=c.querySelector('.flg').getBoundingClientRect(), fs=fb.height?36/fb.height:1, fw=fb.width*fs;
+      if(fim) o+='<image x="'+(L+10)+'" y="'+(T+6)+'" width="'+fw.toFixed(1)+'" height="36" preserveAspectRatio="xMidYMid meet" href="'+esc(fim.getAttribute('src'))+'" xlink:href="'+esc(fim.getAttribute('src'))+'"/>';
+      else o+='<rect x="'+(L+10)+'" y="'+(T+6)+'" width="54" height="36" rx="3" fill="none" stroke="'+rule+'" stroke-dasharray="3 3"/>';
+      tx=L+10+Math.max(fw,54)+10 }
     if(im&&im.getAttribute('src')){ clip++; o+='<clipPath id="cp'+clip+'"><circle cx="'+(L+23)+'" cy="'+(T+CH/2)+'" r="17"/></clipPath><image x="'+(L+6)+'" y="'+(T+CH/2-17)+'" width="34" height="34" preserveAspectRatio="xMidYMid slice" clip-path="url(#cp'+clip+')" href="'+esc(im.getAttribute('src'))+'" xlink:href="'+esc(im.getAttribute('src'))+'"/>'; tx=L+48 }
     if(hap){ var g=c.querySelector('.hglyph'); o+='<circle cx="'+(L+24)+'" cy="'+(T+CH/2)+'" r="15" fill="'+getComputedStyle(g).backgroundColor+'"/><text x="'+(L+24)+'" y="'+(T+CH/2+4)+'" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="'+bg+'">'+x(g.textContent)+'</text>'; tx=L+46 }
     var nm=(c.querySelector('.nm')||{}).textContent||'', yr=(c.querySelector('.yr')||{}).textContent||'';
@@ -97,6 +101,8 @@ function saveReadOnly(){
        everything marked as edit-only in the source is left out, and so are the edit-only parts of the page. */
     var cut=function(t){ return t.replace(/\/\*\{edit\*\/[\s\S]*?\/\*\}edit\*\/\n?/g,'') };
     parts.forEach(function(p){
+      /* only the flags this tree shows */
+      if(!p.css&&/^\s*\/\* Pedigree Builder · flags/.test(p.text)){ var uf=usedFlags(); if(!Object.keys(uf).length) return; p={css:false,text:'var FLAGS='+JSON.stringify(uf)+';'} }
       var t=cut(p.text); if(!t.replace(/\/\*[\s\S]*?\*\//g,'').replace(/'use strict';/g,'').trim()) return;
       if(p.css) css+='<style data-pb>\n'+t.replace(/<\/(style)/gi,'<\\/$1')+'\n</style>\n';
       else js+='<script data-pb>\n'+t.replace(/<\/(script)/gi,'<\\/$1')+'\n<\/script>\n';
