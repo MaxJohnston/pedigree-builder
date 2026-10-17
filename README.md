@@ -290,7 +290,7 @@ Open **Explore** in the toolbar.
 Open **View** in the toolbar:
 
 - **Show birth years of living people:** off by default, so living people show only *Living*. Turn it on to show their birth year.
-- **Show photos on cards.**
+- **Show photos on cards:** people with no photo but a **Born in** place show that place's flag in the photo spot instead.
 - **Show birthplace flags at the end of each line:** for everyone whose line ends on the chart, because no parents are recorded or because they are in the last generation shown, and whose **Born in** field is filled in, the chart adds a card with the flag of that US state or country where their parents would be. Flags for the last generation go in one extra *Birthplaces* column, so lowering **Generations** shows the flags of the people at the new edge. People with no birthplace get no flag. A place that matches no flag shows a dashed card with a question mark. The flags are hidden in edit mode, where those places hold the add-parent cards.
 - **Names on the chart:** birth names, or married names for anyone who has one.
 - **Draw linked ancestors once, with long lines instead of repeat cards:** shown only when the current view has dashed repeat cards. When ticked, every linked ancestor is drawn once, in the further generation, and the long line from the nearer child runs straight out from that child, then joins the line of its brother or sister next to the parents. Lines cross more, but nobody appears twice.

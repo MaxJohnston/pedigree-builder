@@ -307,6 +307,7 @@ select{padding:0 8px}
 .photorow input[type="file"]{font-size:12.5px;max-width:100%}
 /*}edit*/
 .card .av{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none;margin:0 9px 0 -5px;border:1px solid var(--rule-soft);background:var(--band)}
+.card .av.avflag{height:23px;border-radius:3px}
 .pop .pph{float:right;width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 0 6px 10px;border:1px solid var(--rule)}
 .cite{font:500 9.5px var(--font-mono);color:var(--muted);margin-left:2px;vertical-align:super}
 .pop ol.srcs{margin:0;padding-left:18px;display:grid;gap:3px}

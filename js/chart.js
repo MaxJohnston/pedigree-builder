@@ -545,9 +545,11 @@ function render(keep){
 /*}edit*/
     var p=nd.p, isRoot=nd.n===view, nm=esc(p.name), gst=nd.guest, isRep=!!(nd.rep||p.ref);
     var cls='card'+(isRoot?' root':'')+(isRep?' refcard':'')+(gst?' guest':'')+(nd.famous?' famous':'')+(cz.route.has(nd.n)?' route':'')+(cz.anc.has(nd.n)?' hl':'');
-    var av=gst?'':photoOf(nd.n);
+    var av=gst?'':photoOf(nd.n), avf='';
+    /* with photos shown, someone without a photo shows the flag of their birthplace instead */
+    if(!av&&!gst&&!STATE.hidePhotos){ var bq=p.ref!=null&&rawP(p.ref)?rawP(p.ref):p; if(bq.bp){ var bf=flagOf(bq.bp); if(bf.src){ av=bf.src; avf=bf.label } } }
     h+='<div class="'+cls+'" data-n="'+nd.n+'"'+(isRep?' tabindex="0" title="'+nm+' is also drawn elsewhere in the chart. Click to go to the full card."':'')+' style="left:'+xOf(nd.d)+'px;top:'+topOf(nd)+'px;--lc:'+lc(nd.n)+'">'+
-      (av?'<img class="av" alt="" src="'+esc(av)+'">':'')+
+      (av?'<img class="av'+(avf?' avflag':'')+'" alt=""'+(avf?' title="Born in '+esc(avf)+'"':'')+' src="'+esc(av)+'">':'')+
       '<div class="who"><span class="nm" title="'+nm+'">'+nm+'</span><span class="yr"><i class="dot"></i>'+esc(gst&&!p.b&&!p.d?'—':years(p))+'</span></div>'+
       (p.wiki?'<a class="ico wiki" href="'+esc(wikiHref(p.wiki))+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(wikiAria(p.wiki,p.name))+'" title="'+esc(wikiSite(p.wiki))+' (opens in a new tab)"><span class="wglyph" aria-hidden="true">W</span></a>':'')+
       (isRoot||gst?'':'<a class="ico" href="#p'+(p.ref!=null&&P.has(p.ref)?p.ref:nd.n)+'" data-act="tree" aria-label="View the tree of '+nm+'" title="View '+nm+'’s tree">'+ICON_TREE+'</a>')+
