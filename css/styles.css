@@ -80,7 +80,7 @@ select{padding:0 8px}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--lc,var(--rule));flex:none}
 
 .stage{position:relative;flex:1;min-height:340px;border:1px solid var(--rule);border-radius:10px;background:var(--surface);overflow:hidden}
-.viewport{position:absolute;inset:var(--head-h) 0 0 0;overflow:auto;cursor:grab;overscroll-behavior:contain}
+.viewport{position:absolute;inset:var(--head-h) 0 0 0;overflow:auto;cursor:grab;overscroll-behavior:contain;touch-action:pan-x pan-y}
 .viewport.drag{cursor:grabbing;user-select:none}
 .sizer{position:relative}
 .world{position:absolute;left:0;top:0;transform-origin:0 0}

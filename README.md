@@ -391,6 +391,7 @@ What that means in practice:
 | Ctrl+Z (⌘Z) | Undo |
 | Ctrl+Shift+Z or Ctrl+Y (⌘⇧Z) | Redo |
 | Ctrl or ⌘ + mouse wheel | Zoom the chart |
+| Pinch with two fingers (touch screen) | Zoom the chart around your fingers |
 | Escape | Close the open panel, menu or search list |
 | ↑ ↓ then Enter | Choose from a search list |
 | Tab | Move between buttons and fields |

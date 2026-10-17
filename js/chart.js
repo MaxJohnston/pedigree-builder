@@ -620,6 +620,24 @@ vp.addEventListener('wheel',function(e){
   setScale(scale*Math.exp(-e.deltaY*0.0018),e.clientX-r.left,e.clientY-r.top);
 },{passive:false});
 
+/* Two-finger pinch on a touch screen zooms the chart around the fingers, and moving both fingers pans it. */
+var pinch=null;
+var pinchAt=function(t){ var r=vp.getBoundingClientRect(), a=t[0], b=t[1];
+  return {d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1, x:(a.clientX+b.clientX)/2-r.left, y:(a.clientY+b.clientY)/2-r.top} };
+vp.addEventListener('touchstart',function(e){ if(e.touches.length===2){ pinch=pinchAt(e.touches); e.preventDefault() } },{passive:false});
+vp.addEventListener('touchmove',function(e){
+  if(!pinch||e.touches.length!==2) return;
+  e.preventDefault();
+  var q=pinchAt(e.touches);
+  setScale(scale*q.d/pinch.d,q.x,q.y);
+  vp.scrollLeft-=q.x-pinch.x; vp.scrollTop-=q.y-pinch.y; scrollHeads();
+  pinch=q;
+},{passive:false});
+vp.addEventListener('touchend',function(e){ if(e.touches.length<2) pinch=null });
+vp.addEventListener('touchcancel',function(){ pinch=null });
+/* Safari: keep the page itself from zooming when the pinch is on the chart */
+vp.addEventListener('gesturestart',function(e){ e.preventDefault() });
+
 var drag=null;
 vp.addEventListener('pointerdown',function(e){
   if(e.pointerType!=='mouse'||e.button!==0) return;
