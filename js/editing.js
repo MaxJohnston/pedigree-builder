@@ -830,6 +830,7 @@ sheet.addEventListener('click',function(e){
   else if(s==='walls-all'){ wallsAll=true; reportSheet(); }
   else if(s==='pl-lvl'){ placesSheet(b.getAttribute('data-v')); }
   else if(s==='pl-tab'){ plTab=b.getAttribute('data-v'); placesSheet(); }
+  else if(s==='mix-fr'){ mixSum=b.getAttribute('data-v')==='sum'; try{ localStorage.setItem('pedigree-builder-mix-fractions',mixSum?'sum':'total') }catch(_){} placesSheet(); }
   else if(s==='tl-ord'){ tlOrder=b.getAttribute('data-v'); try{ localStorage.setItem('pedigree-builder-timeline-order',tlOrder) }catch(_){} timelineSheet(); }
 /*{edit*/
   else if(s==='copy-exp'){

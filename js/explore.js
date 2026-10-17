@@ -270,18 +270,20 @@ function reportSheet(){
    generation counts 1/2^(g-1). A slot with no person, or a person with no birthplace, takes the birthplace of the nearest
    descendant on that line who has one, so a line that stops early still counts in full. Counts are kept as whole numbers
    of slots, so the fractions are exact. */
-var plTab='moves', plGen=0;
+var plTab='moves', plGen=0, mixSum=false;
+try{ mixSum=localStorage.getItem('pedigree-builder-mix-fractions')==='sum' }catch(_){}
+/* -> {d:{place:{generation:count}}, rep}. A count n in generation gi stands for n/2^(gi-1) of the whole. */
 function birthMix(root,g){
   var memo=new Map(), rep={};
   var keyOf=function(bp){ var f=flagOf(bp), k=f.code?f.code:'?'+f.label; if(!rep[k]) rep[k]=bp; return k };
-  var one=function(k,rem){ var o={}; o[k]=Math.pow(2,rem); return o };
+  var one=function(k,rem){ var o={}; o[k]={}; o[k][g-rem]=1; return o };
   var walk=function(n,rem,inh){
     if(!P.has(n)) return one(inh,rem);
     var c=canonOf(n), p=P.get(c), own=p.bp?keyOf(p.bp):'', k=own||inh;
     if(rem===0||(!P.has(fa(c))&&!P.has(mo(c)))) return one(k,rem);
     var mk=c+'|'+rem+'|'+(own?'':inh); if(memo.has(mk)) return memo.get(mk);
     var a=walk(fa(c),rem-1,k), b=walk(mo(c),rem-1,k), o={};
-    [a,b].forEach(function(d){ for(var x in d) o[x]=(o[x]||0)+d[x] });
+    [a,b].forEach(function(d){ for(var x in d){ var t=o[x]||(o[x]={}); for(var y in d[x]) t[y]=(t[y]||0)+d[x][y] } });
     memo.set(mk,o); return o;
   };
   return {d:walk(root,g-1,''), rep:rep};
@@ -292,7 +294,12 @@ function mixSheetBody(){
   var gcd=function(a,b){ while(b){ var t=a%b; a=b; b=t } return a };
   var rows=Object.keys(d).map(function(k){
     var f=k===''?{code:'',label:'Not recorded',sub:'No birthplace on this line',src:''}:flagOf(bm.rep[k]);
-    var c=d[k], q=gcd(c,tot); return {k:k,f:f,c:c,fr:c===tot?'All':(c/q)+'/'+(tot/q),pc:100*c/tot};
+    var gs=Object.keys(d[k]).map(Number).sort(function(a,b){return a-b}), c=0;
+    gs.forEach(function(gi){ c+=d[k][gi]*Math.pow(2,g-gi) });
+    var q=gcd(c,tot), whole=c===tot?'All':(c/q)+'/'+(tot/q);
+    /* written out by generation: n/2^(gi-1) for each generation the birthplaces come from */
+    var sum=gs.length===1&&c===tot?'All':gs.map(function(gi){ return d[k][gi]+'/'+Math.pow(2,gi-1) }).join('+');
+    return {k:k,f:f,c:c,fr:mixSum?sum:whole,pc:100*c/tot};
   }).sort(function(a,b){ return (a.k==='')-(b.k==='')||b.c-a.c||a.f.label.localeCompare(b.f.label) });
   var opts=''; for(var i=2;i<=maxG;i++) opts+='<option value="'+i+'"'+(i===g?' selected':'')+'>'+i+' · '+esc(genLabel(i-1))+'</option>';
   /* the pie: each slice filled with its flag, cropped to the slice */
@@ -315,11 +322,14 @@ function mixSheetBody(){
   });
   var pie='<svg class="mixpie" viewBox="0 0 '+(2*C)+' '+(2*C)+'" role="img" aria-label="Birthplaces of '+esc(P.get(view).name)+'’s '+esc(genLabel(g-1).toLowerCase())+'"><defs>'+defs+'</defs>'+sl+'</svg>';
   var leg='<ul class="mixleg">'+rows.map(function(r){
-    return '<li><span class="mflag'+(r.f.src?'':' none')+'">'+(r.f.src?'<img src="'+r.f.src+'" alt="">':'?')+'</span><span class="mname">'+esc(r.f.label)+(r.f.sub?'<small>'+esc(r.f.sub)+'</small>':'')+'</span><span class="mfr">'+r.fr+'</span><span class="mpc">'+(r.pc>=1?r.pc.toFixed(1):r.pc.toPrecision(2))+'%</span></li>' }).join('')+'</ul>';
-  return '<div class="btnrow" style="align-items:center"><label class="note2" for="pl-gen">Generation</label><select id="pl-gen" class="mixsel">'+opts+'</select></div>'+
+    return '<li><span class="mflag'+(r.f.src?'':' none')+'">'+(r.f.src?'<img src="'+r.f.src+'" alt="">':'?')+'</span><span class="mname">'+esc(r.f.label)+(r.f.sub?'<small>'+esc(r.f.sub)+'</small>':'')+'</span><span class="mfr">'+r.fr.split('+').join('+<wbr>')+'</span><span class="mpc">'+(r.pc>=1?r.pc.toFixed(1):r.pc.toPrecision(2))+'%</span></li>' }).join('')+'</ul>';
+  var fs=function(v,l){ return '<button type="button" data-s="mix-fr" data-v="'+v+'" aria-pressed="'+(mixSum===(v==='sum'))+'">'+l+'</button>' };
+  return '<div class="btnrow" style="align-items:center"><label class="note2" for="pl-gen">Generation</label><select id="pl-gen" class="mixsel">'+opts+'</select>'+
+    '<span class="note2">Fractions</span><div class="seg" role="group" aria-label="Fractions">'+fs('total','Combined')+fs('sum','By generation')+'</div></div>'+
     '<section><h3 class="sh3">Birthplaces of '+esc(P.get(view).name)+'’s '+esc(genLabel(g-1).toLowerCase())+'</h3>'+
     '<div class="mixwrap">'+pie+leg+'</div>'+
-    '<p class="note2">Each of the '+tot.toLocaleString()+' places in this generation counts '+(tot>1?'1/'+tot.toLocaleString():'in full')+'. Where a line has no person or no birthplace that far back, it takes the birthplace of the nearest person below on that line who has one.</p></section>';
+    '<p class="note2">Each of the '+tot.toLocaleString()+' places in this generation counts '+(tot>1?'1/'+tot.toLocaleString():'in full')+'. Where a line has no person or no birthplace that far back, it takes the birthplace of the nearest person below on that line who has one.'+
+    (mixSum?' By generation, each part n/2<sup>g−1</sup> is n birthplaces found in generation g.':'')+'</p></section>';
 }
 sheet.addEventListener('change',function(e){ if(e.target.id==='pl-gen'){ plGen=+e.target.value; placesSheet(); var s=sheet.querySelector('#pl-gen'); if(s) try{s.focus({preventScroll:true})}catch(_){} } });
 
@@ -336,7 +346,7 @@ function placesSheet(lvl){
   if(lvl) plLvl=lvl; else lvl=plLvl;
   var tabs='<div class="seg pltabs" role="group" aria-label="Show"><button type="button" data-s="pl-tab" data-v="moves" aria-pressed="'+(plTab==='moves')+'">Migration</button><button type="button" data-s="pl-tab" data-v="mix" aria-pressed="'+(plTab==='mix')+'">Birthplace mix</button></div>';
   if(plTab==='mix'){
-    openSheet('<div class="fwrap">'+sheetHead('Explore','Places and migration','Where '+first()+'’s ancestors were born, and where families moved')+'<div class="sbody">'+tabs+mixSheetBody()+
+    openSheet('<div class="fwrap">'+sheetHead('Explore','Places and migration','Where '+P.get(view).name.split(' ')[0]+'’s ancestors were born, and where families moved')+'<div class="sbody">'+tabs+mixSheetBody()+
       '</div><footer class="sf"><button class="btn" type="button" data-s="cancel">Close</button></footer></div>',null,true);
     return;
   }
