@@ -703,7 +703,7 @@ function dataMgr(msg){
       '<textarea id="f-exp" class="mono" rows="4" readonly hidden aria-label="Exported tree text"></textarea>'+
       '<button class="btn" type="button" id="exp-copy" data-s="copy-exp" hidden>Copy this text</button></section>'+
     '<section><h3 class="sh3">Import</h3>'+
-      '<label class="f filein" for="f-file"><span>Choose a .txt file from this page, or a GEDCOM (.ged) file from another program</span><input type="file" id="f-file" accept=".txt,.json,.ged,.gedcom,text/plain,application/json"></label>'+
+      '<label class="f filein" for="f-file"><span>Choose a .txt file or read-only web page (.html) from this page or from Descendant Builder, or a GEDCOM (.ged) file from another program</span><input type="file" id="f-file" accept=".txt,.json,.ged,.gedcom,.html,.htm,text/plain,text/html,application/json"></label>'+
       '<label class="f" for="f-imp"><span>Or paste tree data</span><textarea id="f-imp" class="mono" rows="3"></textarea></label>'+
       '<button class="btn" type="button" data-s="import">Import pasted data…</button>'+
       '<div class="confirm" id="impc" hidden></div></section>'+
@@ -743,8 +743,12 @@ function readImportFile(input){
   r.onload=function(){
     if(isGedcom(r.result)){ gedImportStart(r.result,f.name); return }
     var o=parseTree(r.result);
-    if(!o){ sheetErr('“'+f.name+'” does not contain tree data from this page or a GEDCOM file. Choose a file made with “Export as .txt file”, or a .ged file.'); input.value=''; return }
-    askImport(o,'“'+f.name+'”');
+    if(o){ askImport(o,'“'+f.name+'”'); return }
+    treeFromText(r.result).then(function(t){
+      if(t&&t.db) dbImportStart(t.db,f.name);
+      else if(t&&t.pb) askImport(t.pb,'“'+f.name+'”');
+      else{ sheetErr('“'+f.name+'” does not contain tree data from this page, Descendant Builder or a GEDCOM file. Choose a file made with “Export as .txt file”, a read-only web page, or a .ged file.'); input.value='' }
+    });
   };
   r.onerror=function(){ sheetErr('That file could not be read. Try choosing it again.') };
   r.readAsText(f);
@@ -805,9 +809,13 @@ sheet.addEventListener('click',function(e){
     catch(_){ sel(); b.textContent='Select the text and copy it' }
   }
   else if(s==='import'){
-    var o=parseTree(sheet.querySelector('#f-imp').value);
-    if(!o){ sheetErr('That text is not tree data from this page. Export the tree or use “Copy tree data” to get it.'); return }
-    askImport(o,'the pasted data');
+    var raw=sheet.querySelector('#f-imp').value, o=parseTree(raw);
+    if(o){ askImport(o,'the pasted data'); return }
+    treeFromText(raw).then(function(t){
+      if(t&&t.db) dbImportStart(t.db,'The pasted data');
+      else if(t&&t.pb) askImport(t.pb,'the pasted data');
+      else sheetErr('That text is not tree data from this page or from Descendant Builder. Export the tree or use “Copy tree data” to get it.');
+    });
   }
   else if(s==='import-yes'){
     if(!pendingImport) return;

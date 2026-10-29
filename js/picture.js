@@ -109,7 +109,8 @@ function saveReadOnly(){
       else js+='<script data-pb>\n'+t.replace(/<\/(script)/gi,'<\\/$1')+'\n<\/script>\n';
     });
     var tpl=document.createElement('template'); tpl.innerHTML=PB_BODY;
-    tpl.content.querySelectorAll('[data-edit]').forEach(function(el){ el.remove() });
+    /* the page's own styles, fonts and title go in the head above, so copies of them in the body are dropped */
+    tpl.content.querySelectorAll('[data-edit],style,link,title,meta').forEach(function(el){ el.remove() });
     var body=tpl.innerHTML.replace(/\n{3,}/g,'\n\n');
     var html='<!doctype html>\n<html lang="en">\n<head>\n'+head.join('\n')+'\n'+css+'</head>\n<body>\n'+body+'\n'+
       '<script>var PB_EXPORT='+safe(JSON.stringify(data))+';<\/script>\n'+js+'</body>\n</html>\n';

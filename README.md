@@ -80,6 +80,7 @@ Already have a tree in another program? Export it from there as a **GEDCOM (.ged
 - **Timeline** of lifespans set against historical events.
 - **Undo, redo and an edit history** for the current session.
 - **GEDCOM 5.5.1 import and export** for other genealogy programs.
+- **Import from Descendant Builder**, the companion descendant-chart app: its .txt backups and read-only web pages.
 - **Full backup** as a .txt file.
 - **Save the chart as a picture** (PNG or SVG).
 - **Light and dark themes** that follow your system setting, and a layout that works on phones.
@@ -327,7 +328,7 @@ Files are named like `family-tree-your-name-2026-10-14.txt`.
 
 ### Import
 
-- **Choose a file:** a .txt file exported from Pedigree Builder, or a GEDCOM file from another program.
+- **Choose a file:** a .txt file exported from Pedigree Builder, a read-only web page saved from Pedigree Builder, a Descendant Builder .txt backup or read-only web page (see [Descendant Builder](#descendant-builder)), or a GEDCOM file from another program.
 - **Or paste tree data:** paste text from *Copy tree data* and click **Import pasted data…**.
 
 Importing **replaces your current tree**. You are asked to confirm first, and you can undo it afterwards.
@@ -357,6 +358,23 @@ GEDCOM is the standard format for exchanging family trees. Pedigree Builder read
 **Exporting a GEDCOM file** writes everyone in the tree, their parents' families, children recorded as names, events, notes and sources. Haplogroups, DNA confirmations, the *Notable for* field, Wikipedia links and the living flag are written as custom tags (see [GEDCOM custom tags](#gedcom-custom-tags)); other programs ignore these, but Pedigree Builder reads them back. **Famous relatives and photos are not included in GEDCOM;** use the .txt backup for those.
 
 An example file is in [`examples/sample-tree.ged`](examples/sample-tree.ged).
+
+### Descendant Builder
+
+Descendant Builder is the companion app that charts a person's **descendants**. Pedigree Builder imports its files directly, with **Edit → Backup & reset → Import**:
+
+- a Descendant Builder **.txt backup** (*Export as .txt file* there), or the same text pasted into *Or paste tree data*;
+- a Descendant Builder **read-only web page** (.html), including compressed ones.
+
+A Descendant Builder tree holds whole families, so, as with GEDCOM, you then pick **who the chart starts from**. The box suggests the person whose recorded line goes back furthest; type to search for anyone else, and the count below it says how many ancestors and generations will be charted. Then:
+
+- That person's parents are found from the families they were born into: the parent recorded as male becomes the father. Ancestors who appear more than once are linked automatically.
+- Every person field carries over unchanged (names, dates, places, occupation, notes, sources, events, *Notable for*, Wikipedia link, living flag).
+- A family's marriage date, place and divorce become *Marriage* and *Divorce* events, and a *Seat or home* becomes a *Residence* event.
+- Brothers, sisters, children and other partners who are not in the chart are kept as names on their parents' records, as with GEDCOM.
+- A person's book or index number, when there is one, is added to their notes.
+
+Read-only web pages saved from Pedigree Builder itself can be imported the same way; they hold the whole tree that was saved.
 
 ---
 
@@ -525,7 +543,7 @@ js/core.js              Shared state (STATE) and helpers: rebuild(), names, date
 js/chart.js             Chart layout and drawing, zoom and pan, famous-relative lines, details panel, navigation
 js/editing.js           Edit mode: side sheet, person form, linking, deleting, famous-relative forms, backup screen
 js/storage.js           Saving to localStorage, undo/redo/history, view settings, menus, keyboard shortcuts
-js/files-gedcom.js      File downloads and GEDCOM import/export
+js/files-gedcom.js      File downloads, GEDCOM import/export, Descendant Builder import
 js/picture.js           Saving the chart as PNG or SVG
 js/explore.js           Find, relationship calculator, tree report, places, timeline
 js/main.js              Start-up (loaded last)

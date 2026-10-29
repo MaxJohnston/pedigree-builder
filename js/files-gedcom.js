@@ -1,5 +1,5 @@
 /* Pedigree Builder · js/files-gedcom.js
-   File downloads and GEDCOM 5.5.1 import and export.
+   File downloads, GEDCOM 5.5.1 import and export, and importing Descendant Builder trees.
    All files share one global scope and must load in the order listed in index.html. */
 'use strict';
 
@@ -242,10 +242,15 @@ function gedImportStart(text,fname){
     return {n:i, id:k, name:name, meta:meta, hay:fold(name+' '+meta)};
   });
   var cur=fold((P.get(1)&&P.get(1).bname)||''), def=cands.filter(function(c){return fold(c.name)===cur})[0]||cands[0];
-  GED={G:G, cands:cands, root:def.id, fname:fname};
+  GED={G:G, cands:cands, root:def.id, fname:fname, kind:'GEDCOM file'};
+  importPick('<p><b>'+esc(fname)+'</b> is a GEDCOM file with '+cands.length.toLocaleString()+' '+(cands.length===1?'person':'people')+'. This page charts one person’s ancestors, so choose who the chart starts from. Their brothers, sisters and children are kept as names on their parents’ records.</p>',def);
+}
+/* The "Start the chart from" step of a GEDCOM or Descendant Builder import. */
+function importPick(intro,def){
+  var cands=GED.cands;
   sheetErr('');
   var box=sheet.querySelector('#impc');
-  box.innerHTML='<p><b>'+esc(fname)+'</b> is a GEDCOM file with '+cands.length.toLocaleString()+' '+(cands.length===1?'person':'people')+'. This page charts one person’s ancestors, so choose who the chart starts from. Their brothers, sisters and children are kept as names on their parents’ records.</p>'+
+  box.innerHTML=intro+
     '<div class="f combo"><label for="ged-root">Start the chart from</label><input type="search" id="ged-root" value="'+esc(def.name)+'" role="combobox" aria-expanded="false" aria-controls="ged-rl" aria-autocomplete="list" autocomplete="off"><ul class="combolist" id="ged-rl" role="listbox" hidden></ul></div>'+
     '<p class="note2" id="ged-count"></p>'+
     '<div class="btnrow"><button class="btn danger" type="button" data-s="ged-yes">Import and replace my tree</button><button class="btn" type="button" data-s="no">Cancel</button></div>';
@@ -254,7 +259,7 @@ function gedImportStart(text,fname){
   gedCount();
 }
 function gedCount(){
-  var t=gedBuild(GED.G,GED.root), el=sheet.querySelector('#ged-count');
+  var t=GED.db?dbBuild(GED.db,GED.root):gedBuild(GED.G,GED.root), el=sheet.querySelector('#ged-count');
   GED.tree=t;
   if(el) el.textContent=t.people.length.toLocaleString()+' '+(t.people.length===1?'person':'people')+' will be charted, going back '+t.gens+' '+(t.gens===1?'generation':'generations')+'. Your current tree is replaced; you can undo this.';
 }
@@ -331,12 +336,128 @@ function gedBuild(G,rootId){
 }
 function gedImportFinish(){
   if(!GED||!GED.tree) return;
-  var t=GED.tree, from=GED.fname; delete t.gens; GED=null;
+  var t=GED.tree, from=GED.fname, kind=GED.kind||'GEDCOM file'; delete t.gens; GED=null;
   var kp=prefsNow();
   STATE=normalize(t); Object.assign(STATE,kp);
   view=1; czSel.clear(); try{history.replaceState(null,'','#p1')}catch(_){}
   depth=Math.min(5,MAXGEN);
-  commit(true,false,'Imported the GEDCOM file '+from);
-  dataMgr('GEDCOM file imported. Use Undo if you want your previous tree back.');
+  commit(true,false,'Imported the '+kind+' '+from);
+  dataMgr(kind.charAt(0).toUpperCase()+kind.slice(1)+' imported. Use Undo if you want your previous tree back.');
+}
+/* ---------- Descendant Builder files ----------
+   Descendant Builder, the companion app for a person's descendants, keeps people by id and families as unions
+   ({p:[parent, parent], ch:[children]}). Its .txt backups and its read-only web pages (packed ones too) can be imported here:
+   choose who the chart starts from, and their ancestors are numbered into a pedigree. Read-only pages from this app
+   can be imported the same way. */
+var DBSKIP={id:1,idx:1,seat:1,sex:1,n:1,fa:1,mo:1,ref:1};
+function isDescTree(o){ return !!(o&&Array.isArray(o.people)&&Array.isArray(o.unions)&&o.people.some(function(p){return p&&p.id!=null})) }
+/* The JSON object that starts at t[i], found by matching braces outside strings. */
+function jsonAt(t,i){
+  for(var j=i,lv=0,str=false;j<t.length;j++){
+    var c=t.charCodeAt(j);
+    if(str){ if(c===92) j++; else if(c===34) str=false; continue }
+    if(c===34) str=true; else if(c===123) lv++; else if(c===125&&--lv===0) return JSON.parse(t.slice(i,j+1));
+  }
+  throw new Error('json');
+}
+/* A tree from text: a Descendant Builder or Pedigree Builder backup, or a read-only page from either app.
+   Resolves to {db:state} or {pb:state}, or null. Packed pages keep their data deflated in a base64 script. */
+function treeFromText(t){
+  t=String(t||'');
+  var m=/\b(DB_EXPORT|PB_EXPORT)\s*=\s*\{/.exec(t);
+  if(m){
+    var o=null; try{ o=jsonAt(t,m.index+m[0].length-1).state }catch(_){}
+    return Promise.resolve(isDescTree(o)?{db:o}:o&&valid(o)?{pb:o}:null);
+  }
+  var z=/<script[^>]*\bid=["']?z["']?[^>]*>\s*([A-Za-z0-9+\/=\s]{40,})<\/script>/.exec(t);
+  if(z){
+    if(typeof DecompressionStream!=='function') return Promise.resolve(null);
+    try{ var bin=atob(z[1].replace(/\s+/g,'')), u=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i) }catch(_){ return Promise.resolve(null) }
+    return new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate'))).text()
+      .then(function(s){ return /\b(DB_EXPORT|PB_EXPORT)\s*=\s*\{/.test(s)?treeFromText(s):null },function(){ return null });
+  }
+  var a=t.indexOf('{'), b=t.lastIndexOf('}'), j=null;
+  if(a>=0&&b>a){ try{ j=JSON.parse(t.slice(a,b+1)) }catch(_){} }
+  return Promise.resolve(isDescTree(j)?{db:j}:j&&valid(j)?{pb:j}:null);
+}
+function dbIndex(S){
+  var by=new Map(), pu=new Map(), uo=new Map();
+  S.people.forEach(function(p){ if(p&&p.id!=null) by.set(p.id,p) });
+  S.unions.forEach(function(u){
+    if(!u) return;
+    (u.ch||[]).forEach(function(c){ if(by.has(c)&&!pu.has(c)) pu.set(c,u) });
+    (u.p||[]).forEach(function(x){ if(!by.has(x)) return; if(!uo.has(x)) uo.set(x,[]); uo.get(x).push(u) });
+  });
+  return {S:S, by:by, pu:pu, uo:uo};
+}
+/* Father and mother of id: the parent recorded as male is the father; otherwise the first parent is. */
+function dbParents(D,id){
+  var u=D.pu.get(id); if(!u) return [null,null];
+  var ps=(u.p||[]).filter(function(x){ return x!=null&&x!==id&&D.by.has(x) });
+  var fa=ps.filter(function(x){ return D.by.get(x).sex==='M' })[0], mo=ps.filter(function(x){ return x!==fa })[0];
+  if(fa==null&&ps.length>1){ fa=ps[0]; mo=ps[1] }
+  return [fa==null?null:fa, mo==null?null:mo];
+}
+function dbImportStart(S,fname){
+  var D=dbIndex(S), ids=[]; D.by.forEach(function(p,id){ ids.push(id) });
+  if(!ids.length){ sheetErr('“'+fname+'” has no people in it.'); return }
+  /* generations recorded above each person, to suggest whose chart reaches furthest back */
+  var up=new Map();
+  var gensUp=function(id){
+    if(up.has(id)) return up.get(id); up.set(id,0);
+    var g=0; dbParents(D,id).forEach(function(x){ if(x!=null) g=Math.max(g,gensUp(x)+1) }); up.set(id,g); return g;
+  };
+  var cands=ids.map(function(id,i){
+    var p=D.by.get(id), name=String(p.name||'(no name)'), g=gensUp(id);
+    var meta=[p.b?'b. '+yStr(p.b):p.d?'d. '+yStr(p.d):'',p.bp||p.seat||'',g?g+(g===1?' generation':' generations')+' of ancestors':''].filter(Boolean).join(' · ');
+    return {n:i, id:id, name:name, meta:meta, hay:fold(name+' '+meta), g:g};
+  });
+  var cur=fold((P.get(1)&&P.get(1).bname)||''), def=cands.filter(function(c){ return c.g&&fold(c.name)===cur })[0];
+  if(!def){ def=cands[0]; cands.forEach(function(c){ if(c.g>def.g) def=c }) }
+  GED={db:D, cands:cands, root:def.id, fname:fname, kind:'Descendant Builder file'};
+  importPick('<p><b>'+esc(fname)+'</b> is a Descendant Builder tree with '+cands.length.toLocaleString()+' '+(cands.length===1?'person':'people')+'. This page charts one person’s ancestors, so choose who the chart starts from. It suggests '+esc(def.name)+', whose recorded line goes back furthest. Brothers, sisters, children and other partners are kept as names on their parents’ records.</p>',def);
+}
+function dbBuild(D,rootId){
+  var people=[], byN=new Map(), slot=new Map([[rootId,1]]), q=[[rootId,1]], gens=1;
+  var nameOf=function(x){ var p=D.by.get(x); return p&&p.name?String(p.name):'' };
+  var person=function(id,n){
+    var p=D.by.get(id), o={n:n};
+    Object.keys(p).forEach(function(k){ if(!DBSKIP[k]&&p[k]!=null) o[k]=clone(p[k]) });
+    o.name=String(p.name||'Unknown');
+    if(n===1&&(p.sex==='M'||p.sex==='F')) o.sex=p.sex;
+    var ev=Array.isArray(o.ev)?o.ev:[];
+    if(p.seat&&!ev.some(function(e){ return e&&e.t==='resi'&&e.pl===p.seat })) ev.push({id:uid('e'),t:'resi',pl:String(p.seat),tx:'Seat or home'});
+    (D.uo.get(id)||[]).forEach(function(u){
+      var sp=(u.p||[]).filter(function(x){ return x!=null&&x!==id })[0], spn=sp!=null?nameOf(sp):'';
+      if(u.m||u.mp){
+        var dup=ev.some(function(e){ return e&&e.t==='marr'&&(!u.m||e.y===u.m)&&(!spn||!e.tx||e.tx.indexOf(spn)>=0) });
+        if(!dup){ var e={id:uid('e'),t:'marr'}; if(u.m){ e.date=fullDate(u,'m'); e.y=u.m } if(u.mp) e.pl=String(u.mp); if(spn) e.tx='to '+spn; ev.push(e) }
+      }
+      if(u.div&&!ev.some(function(e){ return e&&e.t==='div'&&(!spn||!e.tx||e.tx.indexOf(spn)>=0) })){ var dv={id:uid('e'),t:'div'}; if(spn) dv.tx='from '+spn; ev.push(dv) }
+    });
+    if(ev.length) o.ev=ev; else delete o.ev;
+    if(p.idx!=null&&String(p.idx)&&String(o.notes||'').indexOf(String(p.idx))<0) o.notes=(o.notes?o.notes+'\n\n':'')+'Index no. '+p.idx;
+    return o;
+  };
+  var r0=person(rootId,1); people.push(r0); byN.set(1,r0);
+  for(var i=0;i<q.length&&people.length<60000;i++){
+    var id=q[i][0], n=q[i][1], ps=dbParents(D,id);
+    [[ps[0],2*n,'fa'],[ps[1],2*n+1,'mo']].forEach(function(x){
+      var pid=x[0], sn=x[1]; if(pid==null||dep(sn)>MAXDEPTH) return;
+      if(slot.has(pid)){ byN.get(n)[x[2]]=slot.get(pid); return }
+      slot.set(pid,sn); var o=person(pid,sn); people.push(o); byN.set(sn,o); q.push([pid,sn]); gens=Math.max(gens,dep(sn)+1);
+    });
+  }
+  /* children and partners who are not in the pedigree become names on their parents' records */
+  slot.forEach(function(n,id){
+    var o=byN.get(n), kids=[], sps=[];
+    (D.uo.get(id)||[]).forEach(function(u){
+      var sp=(u.p||[]).filter(function(x){ return x!=null&&x!==id })[0]; if(sp!=null&&nameOf(sp)&&sps.indexOf(sp)<0) sps.push(sp);
+      (u.ch||[]).forEach(function(c){ if(slot.has(c)) return; var nm=nameOf(c); if(nm&&kids.indexOf(nm)<0) kids.push(nm) });
+    });
+    if(kids.length&&!o.children) o.children=kids;
+    if(!o.spouse&&sps.length&&(n===1||sps.length>1)) o.spouse=sps.map(nameOf).join('; ');
+  });
+  return {v:1, people:people, famous:[], haplo:[], dna:[], photos:{}, gens:gens};
 }
 /*}edit*/
